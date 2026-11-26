@@ -39,7 +39,7 @@ const RouterWrapper = function RouterWrapper(props: Props) {
         const qs = sparams?.toString() || '';
         const finalPath = `${path}${qs.length > 1 ? '?' + qs : ''}`;
 
-        console.log(`router commit: ${finalPath}`);
+        console.debug(`router commit: ${finalPath}`);
         navigate(finalPath, opts);
       })
       .disposer()

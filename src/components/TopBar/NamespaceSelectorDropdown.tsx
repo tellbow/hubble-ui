@@ -29,7 +29,7 @@ const renderItem: ItemRenderer<NamespaceDescriptor> = (ns, itemProps) => {
 };
 
 const filterItem: ItemPredicate<NamespaceDescriptor> = (query, ns, idx, exactMatch) => {
-  if (ns.namespace === '') return true;
+  if (ns.namespace === '') return 'all namespaces'.includes(query.toLowerCase());
 
   const value = ns.namespace;
   const normalizedTitle = value.toLowerCase();
@@ -60,7 +60,7 @@ export const NamespaceSelectorDropdown = memo<Props>(function NamespaceSelectorD
   );
 
   const btnIcon = (
-    <img src="icons/misc/namespace-icon.svg" className={css.namespacesDropdownButtonIcon} />
+    <img src="icons/misc/namespace-icon.svg" className={css.namespacesDropdownButtonIcon} alt="" />
   );
 
   const dropdownText =

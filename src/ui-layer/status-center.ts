@@ -164,7 +164,7 @@ export class StatusCenter extends EventEmitter<Handlers> {
     humanDetails?: string,
     component?: Component | string,
   ) {
-    console.log(err);
+    console.error(err);
     const entry = this.builderFromError(err, title, humanDetails, component).build();
 
     return this.pushEntry(entry);
@@ -194,6 +194,8 @@ export class StatusCenter extends EventEmitter<Handlers> {
       .setTitle('Server error occurred')
       .setComponent(Component.HubbleUI)
       .setDetails(err.toString())
+      // NOTE: A stream retried with the same request repeats its error
+      .setKey(`server-error-${err.toString()}`)
       .build();
 
     return this.pushEntry(entry);
@@ -270,7 +272,7 @@ export class StatusCenter extends EventEmitter<Handlers> {
       .setKey(`ns-${ns}-not-observed`)
       .build();
 
-    console.log('namespace not observed entry: ', entry);
+    console.debug('namespace not observed entry: ', entry);
     this.pushEntry(entry);
   }
 
@@ -341,7 +343,7 @@ export class StatusCenter extends EventEmitter<Handlers> {
     if (!existing) {
       // NOTE: Okay, there is no such keyed entry, let's remember current one
       this._keyedEntries.set(entry.key, entry);
-      console.log(`remembering keyed entry: `, entry.key, entry);
+      console.debug(`remembering keyed entry: `, entry.key, entry);
       return false;
     }
 
@@ -450,7 +452,7 @@ export class StatusCenter extends EventEmitter<Handlers> {
   }
 
   private entryFromNotification(n: Notification): StatusEntryBuilder {
-    console.log('notification: ', n);
+    console.debug('notification: ', n);
     const isCritical = n.isK8sUnavailable;
     const isError = n.isRelayReconnecting;
     const isWarning = !!n.noPermission;

@@ -42,7 +42,8 @@ export const getProps = (
   namespace?: string | null,
 ): GetProps => {
   const spinnerIntent = flowsWaitTimeout ? Intent.NONE : Intent.SUCCESS;
-  namespace = namespace ?? 'this';
+  // NOTE: '' is "All namespaces"
+  namespace = namespace === '' ? 'any' : (namespace ?? 'this');
 
   let flowsTable = 'No flows found for specified time range.';
   if (dataMode === DataMode.CiliumStreaming) {

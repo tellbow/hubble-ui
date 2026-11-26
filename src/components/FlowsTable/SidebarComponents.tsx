@@ -8,6 +8,7 @@ import * as verdictHelpers from '~/domain/helpers/verdict';
 
 import css from './styles.scss';
 import { Labels } from '~/domain/labels';
+import { clickable } from '~/ui/a11y';
 
 export interface DirectionProps {
   filterDirection?: FilterDirection;
@@ -58,7 +59,7 @@ export const LabelsEntryItem = memo<LabelsEntryItemProps>(
     const title = Labels.concatKV(props.label, true);
 
     return (
-      <span className={className} onClick={onClick}>
+      <span className={className} {...clickable(onClick)}>
         {title}
       </span>
     );
@@ -116,7 +117,7 @@ export const TCPFlagsEntryItem = memo<TCPFlagsItemProps>(
     });
 
     return (
-      <span className={className} onClick={onClick}>
+      <span className={className} {...clickable(props.onClick && onClick)}>
         {props.flag.toLocaleUpperCase()}
       </span>
     );
@@ -139,7 +140,7 @@ export const VerdictEntry = memo<VerdictEntryProps>(function FlowsTableSidebarVe
   });
 
   return (
-    <span className={className} onClick={props.onClick}>
+    <span className={className} {...clickable(props.onClick)}>
       {verdictHelpers.toString(props.verdict)}
     </span>
   );
@@ -162,7 +163,7 @@ export const IPEntry = memo<IPItemProps>(function FlowsTableSidebarIPEntry(props
   });
 
   return (
-    <span className={className} onClick={onClick}>
+    <span className={className} {...clickable(props.onClick && onClick)}>
       {props.ip}
     </span>
   );
@@ -185,7 +186,7 @@ export const DnsBodyItem = memo<DnsItemProps>(function FlowsTableSidebarDnsBodyI
   });
 
   return (
-    <span className={className} onClick={onClick}>
+    <span className={className} {...clickable(props.onClick && onClick)}>
       {props.dns}
     </span>
   );
@@ -209,7 +210,7 @@ export const IdentityEntry = memo<IdentityItemProps>(
     });
 
     return (
-      <span className={className} onClick={onClick}>
+      <span className={className} {...clickable(props.onClick && onClick)}>
         {props.identity}
       </span>
     );
@@ -233,7 +234,7 @@ export const PodEntry = memo<PodItemProps>(function FlowsTableSidebarPodEntry(pr
   });
 
   return (
-    <span className={className} onClick={onClick}>
+    <span className={className} {...clickable(props.onClick && onClick)}>
       {props.podSelector.pod}
     </span>
   );

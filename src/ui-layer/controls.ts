@@ -39,7 +39,7 @@ export class Controls {
   }
 
   public namespaceChanged(ns: string | null) {
-    console.log(`UILayer.controls namespaceChanged`);
+    console.debug(`UILayer.controls namespaceChanged`);
     // TODO: Actually, we need to drop only those filter entries, which don't make sense on
     // namespace change and leave all others there.
     this.dataLayer.controls.setFlowFilters(null);
@@ -165,7 +165,7 @@ export class Controls {
       targetApp = controls.currentApp;
     }
 
-    console.log('openApplicationByNamespace: ', targetApp, nsDesc, currentAppProps);
+    console.debug('openApplicationByNamespace: ', targetApp, nsDesc, currentAppProps);
     this.openApplication(targetApp);
   }
 }

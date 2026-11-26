@@ -65,7 +65,7 @@ export class TransferState {
     this.dataMode = mode;
 
     const isChanged = prev !== mode;
-    console.log(`setting data mode: ${mode}, isChanged: ${isChanged}`);
+    console.debug(`setting data mode: ${mode}, isChanged: ${isChanged}`);
     return isChanged;
   }
 

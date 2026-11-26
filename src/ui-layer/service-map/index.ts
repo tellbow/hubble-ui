@@ -100,7 +100,7 @@ export class ServiceMap extends EventEmitter<Handlers> {
   }
 
   public toggleDetached() {
-    console.log(`toggleDetached: dropping layout / collector for service map`);
+    console.debug(`toggleDetached: dropping layout / collector for service map`);
     this.clearCoordinates();
   }
 

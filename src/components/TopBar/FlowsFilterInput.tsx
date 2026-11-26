@@ -45,7 +45,7 @@ export const FlowsFilterInput = (props: Props) => {
   };
 
   const onQueryChange = useCallback((query: string) => {
-    setUserInput(query.replace(/\s/, ''));
+    setUserInput(query.replace(/\s/g, ''));
   }, []);
 
   // prettier-ignore

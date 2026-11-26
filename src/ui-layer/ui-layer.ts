@@ -77,17 +77,23 @@ export class UILayer {
 
   private setupEventHandlers() {
     this.dataLayer.once(DLEvent.FeatureFlagsSet, ff => {
-      console.log(`feature flags set: `, ff);
+      console.debug(`feature flags set: `, ff);
       this.trySetupEverything();
     });
 
     this.router.once(REvent.Initialized, () => {
-      console.log(`router is initialized`);
+      console.debug(`router is initialized`);
       this.trySetupEverything();
     });
 
     this.dataLayer.serviceMap.onConnectEvent(ce => {
       this.handleConnectEvent(ce);
+    });
+
+    // NOTE: E.g. hubble-relay rejecting a filter (ip=foo): without this the
+    // stream only seems to reconnect forever.
+    this.dataLayer.serviceMap.onErrors(errs => {
+      this.statusCenter.pushControlStreamErrors(errs);
     });
   }
 
@@ -109,7 +115,7 @@ export class UILayer {
   private trySetupEverything() {
     const { uiSettings } = this.store;
     if (!uiSettings.isFeaturesSet || !this.router.isInitialized) {
-      console.log(`trySetupEverything is prevented`);
+      console.debug(`trySetupEverything is prevented`);
       return;
     }
 
@@ -125,12 +131,12 @@ export class UILayer {
     this.router.onLocationUpdated(async evt => {
       const app = this.router.getCurrentApplication();
       const [prevApp, isChanged] = this.store.controls.setCurrentApp(app);
-      console.log('UILayer: onLocationUpdated: ', evt, prevApp, app, isChanged);
+      console.debug('UILayer: onLocationUpdated: ', evt, prevApp, app, isChanged);
 
       // NOTE: Location is "detached" if it was changed not by application controls
       // i e for example by pressing "back" button in the browser
       if (evt.isDetached) {
-        console.log(`updated location is detached, calling applyLocalParameters`);
+        console.debug(`updated location is detached, calling applyLocalParameters`);
 
         // NOTE: We reapply all the application parameters here and the main
         // complexity is to notify all other parts of UI of that, not triggering
@@ -144,7 +150,7 @@ export class UILayer {
 
     // NOTE: FiltersChanged event is not triggered on first application open
     this.dataLayer.controls.onFiltersChanged(async f => {
-      console.log('UI layer: filters changed', f);
+      console.debug('UI layer: filters changed', f);
       await this.dataLayer.filtersChanged(f);
     });
   }
@@ -155,7 +161,7 @@ export class UILayer {
     filtersDiff.step(this.store.filters);
 
     if (filtersDiff.changed) {
-      console.log(`filters are changed after applyLocalParameters`, filtersDiff);
+      console.debug(`filters are changed after applyLocalParameters`, filtersDiff);
       await this.dataLayer.filtersChanged(filtersDiff);
     }
 
@@ -163,7 +169,7 @@ export class UILayer {
   }
 
   private async appToggled(prevApp: Application, nextApp: Application, isChanged: boolean) {
-    console.log(`appToggled`, prevApp, nextApp, isChanged);
+    console.debug(`appToggled`, prevApp, nextApp, isChanged);
 
     await this.serviceMap.appToggled(prevApp, nextApp);
   }
@@ -172,7 +178,7 @@ export class UILayer {
     const routeParams = this.router.getRouteParams();
     const storageParams = this.dataLayer.readLocalStorageParams();
 
-    console.log(`applying local params: `, routeParams, storageParams);
+    console.debug(`applying local params: `, routeParams, storageParams);
 
     // NOTE: All these setters are used directly without DataLayer not to trigger
     // for example router to reemit events of params update. This is the initialization

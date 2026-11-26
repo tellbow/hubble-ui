@@ -60,5 +60,3 @@ yarn-error.log*
 # VSCode
 .vscode
 
-# Cypress
-src/testing/e2e/screenshots

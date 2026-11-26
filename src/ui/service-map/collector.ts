@@ -133,7 +133,7 @@ export class RefsCollector extends EventEmitter<Handlers> {
       const cardRoot = cardRef.current;
       // NOTE: An element has null body when detached from current DOM Tree
       if (cardRoot == null || cardRoot.closest('body') == null) {
-        console.log(`card ${cardId} is invisible now`);
+        console.debug(`card ${cardId} is invisible now`);
         return;
       }
 
