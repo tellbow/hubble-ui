@@ -34,3 +34,4 @@ USER root
 RUN apk upgrade --no-cache
 USER 101
 COPY --from=stage1 /app/server/public /app
+COPY nginx/hubble-ui.conf /etc/nginx/conf.d/hubble-ui.conf
