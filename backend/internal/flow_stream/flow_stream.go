@@ -80,6 +80,8 @@ func New(
 		log:             log,
 		connectionPool:  connPool,
 		callProps:       callProps,
+		flows:           make(chan *pbFlow.Flow),
+		errors:          make(chan error),
 		stop:            make(chan struct{}),
 		stopOnce:        sync.Once{},
 		connectionMutex: new(sync.Mutex),
@@ -294,18 +296,10 @@ func (h *FlowStream) Stopped() chan struct{} {
 }
 
 func (h *FlowStream) Errors() chan error {
-	if h.errors == nil {
-		h.errors = make(chan error)
-	}
-
 	return h.errors
 }
 
 func (h *FlowStream) Flows() chan *pbFlow.Flow {
-	if h.flows == nil {
-		h.flows = make(chan *pbFlow.Flow)
-	}
-
 	return h.flows
 }
 

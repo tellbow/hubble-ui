@@ -72,6 +72,8 @@ func New(
 		callProps:       callProps,
 		delay:           delay,
 		connectionMutex: new(sync.Mutex),
+		errors:          make(chan error),
+		statuses:        make(chan *FullStatus),
 		stop:            make(chan struct{}),
 		stopOnce:        sync.Once{},
 		isDumb:          false,
@@ -128,18 +130,10 @@ func (h *Handle) Stop() {
 }
 
 func (h *Handle) Errors() chan error {
-	if h.errors == nil {
-		h.errors = make(chan error)
-	}
-
 	return h.errors
 }
 
 func (h *Handle) Statuses() chan *FullStatus {
-	if h.statuses == nil {
-		h.statuses = make(chan *FullStatus)
-	}
-
 	return h.statuses
 }
 

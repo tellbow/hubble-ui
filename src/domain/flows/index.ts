@@ -617,4 +617,20 @@ export class Flow {
   public get authTypeLabel(): string {
     return authtypeHelpers.toString(this.ref.authType);
   }
+
+  public get egressAllowedBy(): string[] {
+    return this.ref.egressAllowedBy ?? [];
+  }
+
+  public get ingressAllowedBy(): string[] {
+    return this.ref.ingressAllowedBy ?? [];
+  }
+
+  public get egressDeniedBy(): string[] {
+    return this.ref.egressDeniedBy ?? [];
+  }
+
+  public get ingressDeniedBy(): string[] {
+    return this.ref.ingressDeniedBy ?? [];
+  }
 }

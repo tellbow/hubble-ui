@@ -25,6 +25,8 @@ func (ds *DataStash) PushNamespaceEvent(ns *ns_common.NSEvent) *ns_common.NSEven
 		return ns
 	}
 
+	// The latest event wins: added then deleted is deleted, and the other way round.
+	existing.Event = ns.Event
 	if ns.K8sNamespace != nil {
 		existing.K8sNamespace = ns.K8sNamespace
 	}

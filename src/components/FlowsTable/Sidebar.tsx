@@ -303,6 +303,10 @@ export const FlowsTableSidebar = memo<Props>(function FlowsTableSidebar(props) {
         </section>
       )}
       <section className={css.block}>
+        <span className={css.title}>Encrypted</span>
+        <div className={css.body}>{flow.isEncrypted ? 'Yes' : 'No'}</div>
+      </section>
+      <section className={css.block}>
         <span className={css.title}>Traffic direction</span>
         <div className={css.body}>{flow.trafficDirectionLabel}</div>
       </section>
@@ -444,6 +448,25 @@ export const FlowsTableSidebar = memo<Props>(function FlowsTableSidebar(props) {
           </div>
         </section>
       )}
+      <PolicySection title="Egress allowed by policies" names={flow.egressAllowedBy} />
+      <PolicySection title="Ingress allowed by policies" names={flow.ingressAllowedBy} />
+      <PolicySection title="Egress denied by policies" names={flow.egressDeniedBy} />
+      <PolicySection title="Ingress denied by policies" names={flow.ingressDeniedBy} />
     </div>
+  );
+});
+
+const PolicySection = memo<{ title: string; names: string[] }>(function PolicySection(props) {
+  if (props.names.length === 0) return null;
+
+  return (
+    <section className={css.block}>
+      <span className={css.title}>{props.title}</span>
+      <div className={css.body}>
+        {props.names.map(name => (
+          <div key={name}>{name}</div>
+        ))}
+      </div>
+    </section>
   );
 });

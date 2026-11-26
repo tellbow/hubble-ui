@@ -83,6 +83,10 @@ func (dch *DynamicChannel[T]) Enqueue(ctx context.Context, d T) error {
 
 		select {
 		case <-ctx.Done():
+			// The dequeuer still waits: give it back to the next Enqueue.
+			dch.mx.Lock()
+			dch.demand.Push(w)
+			dch.mx.Unlock()
 			return context.Cause(ctx)
 		case <-w.invalid:
 		case w.ready <- struct{}{}:
@@ -151,6 +155,11 @@ func (dch *DynamicChannel[T]) Dequeue(ctx context.Context) (*T, error) {
 
 		select {
 		case <-ctx.Done():
+			// The enqueuer still waits with its datum: keep it for the next
+			// Dequeue instead of losing it (and the enqueuer) for good.
+			dch.mx.Lock()
+			dch.supply.Push(c)
+			dch.mx.Unlock()
 			return nil, context.Cause(ctx)
 		case <-c.invalid:
 		case c.ready <- struct{}{}:
@@ -188,12 +197,14 @@ func (dch *DynamicChannel[T]) DequeueNonblock() *T {
 			return &c.datum
 		}
 
+		// Not a default case: the enqueuer is on its way into its select and
+		// either takes the hand-off or gives up; returning the datum without
+		// the hand-off would leave it blocked for good.
 		select {
 		case <-c.invalid:
 			dch.mx.Lock()
 			continue
 		case c.ready <- struct{}{}:
-		default:
 		}
 
 		return &c.datum

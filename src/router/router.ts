@@ -20,6 +20,10 @@ import {
 import { LocationState } from './state';
 import { TransactionRunner } from './transaction';
 
+// NOTE: The current namespace '' means all namespaces; the URL can't hold an
+// empty value, and '*' is no valid namespace name.
+const ALL_NAMESPACES_PARAM = '*';
+
 export enum ApplicationPath {
   ServiceMap = '/',
 }
@@ -103,7 +107,8 @@ export class Router extends EventEmitter<Handlers> {
   }
 
   public getRouteParams(): RouteParams {
-    const ns = this.searchParams.get(RouteParam.Namespace);
+    const nsParam = this.searchParams.get(RouteParam.Namespace);
+    const ns = nsParam === ALL_NAMESPACES_PARAM ? '' : nsParam;
     const verdicts = dhelpers.verdict.parseManySet(this.searchParams.get(RouteParam.Verdicts), '-');
     const httpStatus = this.searchParams.get(RouteParam.HttpStatus);
     const flowFilters = FilterEntry.parseMany(this.searchParams.get(RouteParam.FlowsFilter));
@@ -181,7 +186,10 @@ export class Router extends EventEmitter<Handlers> {
     // wrong set op in that handlers against router can cause infinite recursion cycle.
 
     this.dataLayer.controls.onCurrentNamespaceChanged(diff => {
-      this.updateRouteParam(RouteParam.Namespace, diff.after);
+      this.updateRouteParam(
+        RouteParam.Namespace,
+        diff.after === '' ? ALL_NAMESPACES_PARAM : diff.after,
+      );
     });
 
     this.dataLayer.controls.onVerdictsChanged(diff => {

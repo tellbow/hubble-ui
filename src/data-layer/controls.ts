@@ -59,8 +59,8 @@ export class Controls extends EventEmitter<Handlers> {
       .controlStream()
       .onNamespaceChanges(nsChanges => {
         nsChanges.forEach(nsChange => {
-          const { namespace: nsDescriptor } = nsChange;
-          this.store.applyNamespaceChange(nsDescriptor);
+          const { namespace: nsDescriptor, change } = nsChange;
+          this.store.applyNamespaceChange(nsDescriptor, change);
         });
       })
       .onNotification(notif => {
@@ -71,6 +71,13 @@ export class Controls extends EventEmitter<Handlers> {
       });
 
     return this.controlStream;
+  }
+
+  // NOTE: Forgets a control stream the backend has ended, so that
+  // `ensureControlStream` opens a new one.
+  public dropControlStream() {
+    this.controlStream?.terminate().offAllEvents();
+    this.controlStream = void 0;
   }
 
   public async stopFetches() {

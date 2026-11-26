@@ -94,6 +94,15 @@ export class Message {
     return this;
   }
 
+  public setLastDatumId(id: string): this {
+    if (this.ref.meta != null) {
+      pb.Meta.mergePartial(this.ref.meta, {
+        lastDatumId: id,
+      });
+    }
+    return this;
+  }
+
   public setTraceId(tId?: string): this {
     if (this.ref.meta != null) {
       pb.Meta.mergePartial(this.ref.meta, {
@@ -132,6 +141,10 @@ export class Message {
 
   public get channelId() {
     return this.ref.meta?.channelId || '';
+  }
+
+  public get lastDatumId() {
+    return this.ref.meta?.lastDatumId || '';
   }
 
   public get pollDelay() {

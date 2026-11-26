@@ -27,6 +27,8 @@ type Watcher struct {
 func New(log *slog.Logger, k8s kubernetes.Interface) *Watcher {
 	w := new(Watcher)
 	w.log = log
+	w.nsEvents = make(chan *common.NSEvent)
+	w.errors = make(chan error)
 	w.stop = make(chan struct{})
 	w.stopOnce = sync.Once{}
 	w.k8s = k8s
@@ -38,20 +40,30 @@ func NewDumb() *Watcher {
 	return new(Watcher)
 }
 
-func (w *Watcher) processEvent(ctx context.Context, obj interface{}) error {
-	newest := obj.(cache.Deltas).Newest()
-	ns := newest.Object.(*v1.Namespace)
+func (w *Watcher) handlers(ctx context.Context) cache.ResourceEventHandlerFuncs {
+	return cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj any) {
+			w.handleNSAddition(ctx, obj)
+		},
+		UpdateFunc: func(_, obj any) {
+			if obj.(*v1.Namespace).Status.Phase == v1.NamespaceTerminating {
+				w.handleNSDeletion(ctx, obj)
+				return
+			}
 
-	switch {
-	case newest.Type == cache.Added || newest.Type == cache.Sync:
-		w.handleNSAddition(ctx, newest.Object)
-	case newest.Type == cache.Deleted || ns.Status.Phase == v1.NamespaceTerminating:
-		w.handleNSDeletion(ctx, newest.Object)
-	case newest.Type == cache.Updated:
-		w.handleNSUpdate(ctx, newest.Object)
+			w.handleNSUpdate(ctx, obj)
+		},
+		DeleteFunc: func(obj any) {
+			// A namespace deleted while the watch was down comes from the relist.
+			if gone, ok := obj.(cache.DeletedFinalStateUnknown); ok {
+				obj = gone.Obj
+			}
+
+			if _, ok := obj.(*v1.Namespace); ok {
+				w.handleNSDeletion(ctx, obj)
+			}
+		},
 	}
-
-	return nil
 }
 
 func (w *Watcher) handleNSAddition(ctx context.Context, obj interface{}) {
@@ -83,21 +95,17 @@ func (w *Watcher) Run(ctx context.Context) {
 		fields.Everything(),
 	)
 
-	fifo := cache.NewDeltaFIFOWithOptions(cache.DeltaFIFOOptions{})
-	cfg := &cache.Config{
-		Queue:         fifo,
+	// The informer keeps the namespaces it has seen, so a relist after a
+	// watch error reports the ones deleted meanwhile. List and watch errors
+	// are logged and retried by the reflector; they don't end the stream.
+	_, controller := cache.NewInformerWithOptions(cache.InformerOptions{
 		ListerWatcher: nsWatcher,
 		ObjectType:    &v1.Namespace{},
-		Process: func(obj interface{}, isInInitialList bool) error {
-			return w.processEvent(ctx, obj)
-		},
-		WatchErrorHandler: func(_ *cache.Reflector, err error) {
-			w.sendError(ctx, err)
-		},
-	}
+		Handler:       w.handlers(ctx),
+	})
 
 	w.log.Info("watcher is running")
-	cache.New(cfg).Run(w.stop)
+	controller.Run(w.stop)
 }
 
 func (w *Watcher) Stop() {
@@ -112,19 +120,12 @@ func (w *Watcher) Stop() {
 	w.log.Info("watcher is stopped")
 }
 
+// Errors never yields: the reflector retries list and watch errors itself.
 func (w *Watcher) Errors() chan error {
-	if w.errors == nil {
-		w.errors = make(chan error)
-	}
-
 	return w.errors
 }
 
 func (w *Watcher) NSEvents() chan *common.NSEvent {
-	if w.nsEvents == nil {
-		w.nsEvents = make(chan *common.NSEvent)
-	}
-
 	return w.nsEvents
 }
 
@@ -133,13 +134,5 @@ func (w *Watcher) sendNSEvent(ctx context.Context, nse *common.NSEvent) {
 	case <-ctx.Done():
 	case <-w.stop:
 	case w.NSEvents() <- nse:
-	}
-}
-
-func (w *Watcher) sendError(ctx context.Context, err error) {
-	select {
-	case <-ctx.Done():
-	case <-w.stop:
-	case w.Errors() <- err:
 	}
 }

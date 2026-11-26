@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -46,6 +47,13 @@ type Channel struct {
 	middlewares []ChannelMiddleware
 
 	prioritizedCookies []*http.Cookie
+
+	// The last message sent to a client that acknowledges messages, kept
+	// until the client says it got it (see DequeueOutgoingAcked).
+	deliveryMx sync.Mutex
+	lastSent   *message.MessageBuilder
+	lastSentId string
+	sentCount  uint64
 }
 
 func (ch *Channel) IsStaleDuration(past time.Duration) bool {
@@ -324,6 +332,42 @@ func (ch *Channel) DequeueOutgoingTimeout(timeout time.Duration) (
 	return ch.msgs.DequeueOutgoingTimeout(ch.ctx, timeout)
 }
 
+// DequeueOutgoingAcked gives the message a poll answers with. A client that
+// names the last message it got (lastDatumId, "0" before the first) gets the
+// previous message again if that one never reached it, e.g. because its
+// request timed out; without that, a lost answer is lost for good. A client
+// that names none gets every message once, as before.
+func (ch *Channel) DequeueOutgoingAcked(lastDatumId string, timeout time.Duration) (
+	*message.MessageBuilder, error,
+) {
+	ch.deliveryMx.Lock()
+	defer ch.deliveryMx.Unlock()
+
+	if lastDatumId != "" && ch.lastSent != nil && lastDatumId != ch.lastSentId {
+		return ch.lastSent, nil
+	}
+	ch.lastSent = nil
+
+	var msgb *message.MessageBuilder
+	var err error
+	if timeout == 0 {
+		msgb, err = ch.DequeueOutgoingNonblock()
+	} else {
+		msgb, err = ch.DequeueOutgoingTimeout(timeout)
+	}
+
+	if msgb == nil || lastDatumId == "" {
+		return msgb, err
+	}
+
+	ch.sentCount++
+	ch.lastSentId = strconv.FormatUint(ch.sentCount, 10)
+	sent := msgb.WithLastDatumId(ch.lastSentId)
+	ch.lastSent = &sent
+
+	return ch.lastSent, err
+}
+
 func (ch *Channel) PeekIncoming() (*message.Message, error) {
 	if ch.msgs.IncomingsSize() == 0 && ch.IsClosed() {
 		return nil, ErrChannelClosed
@@ -343,10 +387,17 @@ func (ch *Channel) AwaitHandler(handlerFn ChannelHandler) {
 	ch.Close()
 }
 
-func (ch *Channel) GetClientPollDelay() time.Duration {
-	return ch.timings.ClientPollDelay(
-		ch.msgs.OutgoingsSize(),
-	)
+// GetClientPollDelay is the delay until the client's next poll. After a poll
+// that delivered a message it is the shortest: the handler that handed it over
+// may have the next one at once, and counting it as queued keeps the delay from
+// adapting to one message per poll, which would make that its throughput.
+func (ch *Channel) GetClientPollDelay(delivered bool) time.Duration {
+	n := ch.msgs.OutgoingsSize()
+	if delivered {
+		n++
+	}
+
+	return ch.timings.ClientPollDelay(n)
 }
 
 func (ch *Channel) ResponseBuilder() message.MessageBuilder {

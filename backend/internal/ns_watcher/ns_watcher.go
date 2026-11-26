@@ -56,6 +56,8 @@ func New(
 	return &NSWatcher{
 		log:        log,
 		k8sWatcher: k8s.New(log.With(slog.String("ns-kind", "k8s")), k8sHandle),
+		errors:     make(chan error),
+		events:     make(chan *common.NSEvent),
 		stop:       make(chan struct{}),
 		stopOnce:   sync.Once{},
 	}, nil
@@ -84,18 +86,10 @@ func (w *NSWatcher) Stop() {
 }
 
 func (w *NSWatcher) NSEvents() chan *common.NSEvent {
-	if w.events == nil {
-		w.events = make(chan *common.NSEvent)
-	}
-
 	return w.events
 }
 
 func (w *NSWatcher) Errors() chan error {
-	if w.errors == nil {
-		w.errors = make(chan error)
-	}
-
 	return w.errors
 }
 

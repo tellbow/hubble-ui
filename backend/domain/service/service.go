@@ -39,16 +39,8 @@ func FromEndpointProtoAndDNS(
 }
 
 func IdsFromFlowProto(f *pbFlow.Flow) (string, string) {
-	sourceProps := labels.Props(f.GetSource().GetLabels())
-	destProps := labels.Props(f.GetDestination().GetLabels())
-
-	senderSvcId := getServiceId(
-		f.GetSource(), f.GetSourceNames(), sourceProps, false,
-	)
-
-	receiverSvcId := getServiceId(
-		f.GetDestination(), f.GetDestinationNames(), destProps, true,
-	)
+	senderSvcId := getServiceId(f.GetSource(), f.GetSourceNames(), false)
+	receiverSvcId := getServiceId(f.GetDestination(), f.GetDestinationNames(), true)
 
 	return senderSvcId, receiverSvcId
 }
@@ -112,7 +104,7 @@ func (s *Service) SetIsReceiver(state bool) {
 }
 
 func (s *Service) Id() string {
-	return getServiceId(s.endpoint, s.dnsNames, s.LabelProps, s.isReceiver)
+	return getServiceId(s.endpoint, s.dnsNames, s.isReceiver)
 }
 
 func (s *Service) FlowRef() *pbFlow.Flow {
@@ -147,10 +139,11 @@ func (l *Service) IsEnrichedWith(r *Service) bool {
 func getServiceId(
 	ep *pbFlow.Endpoint,
 	dnsNames []string,
-	lblProps *labels.LabelProps,
 	isReceiver bool,
 ) string {
-	if !lblProps.IsWorld && ep.GetIdentity() > 0 {
+	// NOTE: One card per identity, world included: a world card stands for
+	// every external peer of its identity, not for one of their DNS names.
+	if ep.GetIdentity() > 0 {
 		return strconv.FormatUint(uint64(ep.GetIdentity()), 10)
 	}
 

@@ -39,16 +39,20 @@ func (srv *APIServer) ControlStream(
 	relayConnChannel, channelReader := dchannel.AsOutputChannel(connSub.Datum)
 	go channelReader(ctx)
 
-	statusChecker, err := relayClient.ServerStatusChecker(hubble_client.StatusCheckerOptions{
+	statusOpts := hubble_client.StatusCheckerOptions{
 		Delay: 5 * time.Second,
 		Log:   log,
-	})
+	}
+	statusChecker, err := relayClient.ServerStatusChecker(statusOpts)
 	if err != nil {
 		return err
 	}
 
 	go statusChecker.Run(ctx)
-	defer statusChecker.Stop()
+	defer func() { statusChecker.Stop() }()
+
+	// Set while a failed status checker waits to be replaced.
+	var restartStatus <-chan time.Time
 
 	go nsWatcher.Run(ctx)
 	defer nsWatcher.Stop()
@@ -82,8 +86,8 @@ F:
 				return err
 			}
 		case err := <-nsWatcher.Errors():
-			log.Error("ns watcher failed", "error", err)
-			return err
+			// The informer retries by itself; the stream goes on.
+			log.Error("ns watcher error", "error", err)
 		case fullStatus := <-statusChecker.Statuses():
 			evt := serverStatusResponse(fullStatus)
 
@@ -92,8 +96,18 @@ F:
 				return err
 			}
 		case err := <-statusChecker.Errors():
-			log.Error("status checker error", "error", err)
-			return err
+			// The relay's status is a notification: losing it must not end
+			// the namespaces' stream, which the frontend opens only once.
+			log.Error("status checker error, restarting it", "error", err)
+			statusChecker.Stop()
+			restartStatus = time.After(statusOpts.Delay)
+		case <-restartStatus:
+			restartStatus = nil
+			if statusChecker, err = relayClient.ServerStatusChecker(statusOpts); err != nil {
+				return err
+			}
+
+			go statusChecker.Run(ctx)
 		case st := <-relayConnChannel:
 			switch {
 			case st.IsConnected():

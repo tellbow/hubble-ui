@@ -12,6 +12,7 @@ import { DataMode } from '~/domain/interactions';
 import { StateChange } from '~/domain/misc';
 import { NamespaceDescriptor } from '~/domain/namespaces';
 import { FilterEntry } from '~/domain/filtering/filter-entry';
+import { Retries } from '~/utils/retry';
 
 import { Options } from './common';
 import { StatusCenter } from './status-center';
@@ -21,6 +22,7 @@ export class Controls {
   private router: Router;
   private dataLayer: DataLayer;
   private statusCenter: StatusCenter;
+  private controlStreamRetries = Retries.newExponential();
 
   constructor(opts: Options) {
     this.store = opts.store;
@@ -91,7 +93,21 @@ export class Controls {
       .onErrors(errs => {
         this.statusCenter.pushControlStreamErrors(errs);
       })
+      .onMessage(() => this.controlStreamRetries.reset())
+      .onTerminated(isStopped => {
+        if (!isStopped) this.reopenControlStream();
+      })
       .run();
+  }
+
+  // NOTE: The backend ends the control stream when it restarts or forgets the
+  // channel; without a new one the namespaces and relay status stop updating.
+  // shortcut: namespaces deleted while no stream was open stay listed until a
+  // reload; replace the list with the new stream's first one if that matters.
+  private async reopenControlStream() {
+    this.dataLayer.controls.dropControlStream();
+    await this.controlStreamRetries.wait();
+    this.setupControlStream();
   }
 
   private openApplication(app: Application) {

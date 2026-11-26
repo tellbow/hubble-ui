@@ -603,3 +603,98 @@ func (ia *intAccumulator) IterateWindowConsumed(wsize int, fn func(window []int)
 		fn(ia.consumed[i:j])
 	}
 }
+
+// A Dequeue whose context is done may pop a blocked Enqueue's claim and
+// then give up: the datum must stay for the next Dequeue, and the Enqueue
+// must not block for good.
+func TestDequeueGivingUpKeepsBlockedEnqueue(t *testing.T) {
+	for i := range 200 {
+		ch := New[int]()
+		enqDone := make(chan error, 1)
+		go func() { enqDone <- ch.Enqueue(context.Background(), 42) }()
+		for ch.Size() == 0 {
+			time.Sleep(time.Millisecond)
+		}
+		time.Sleep(time.Millisecond) // Enqueue is in its select now
+
+		done, cancel := context.WithCancel(context.Background())
+		cancel()
+		if d, err := ch.Dequeue(done); err == nil {
+			if *d != 42 {
+				t.Fatalf("got %d, want 42", *d)
+			}
+		} else {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			d, err := ch.Dequeue(ctx)
+			cancel()
+			if err != nil {
+				t.Fatalf("iteration %d: datum lost after a Dequeue gave up: %v", i, err)
+			}
+			if *d != 42 {
+				t.Fatalf("got %d, want 42", *d)
+			}
+		}
+		select {
+		case err := <-enqDone:
+			if err != nil {
+				t.Fatalf("Enqueue: %v", err)
+			}
+		case <-time.After(time.Second):
+			t.Fatalf("iteration %d: Enqueue still blocked after its datum was taken", i)
+		}
+	}
+}
+
+// An Enqueue whose context is done may pop a waiting Dequeue's claim and
+// then give up: the Dequeue must still get the next datum.
+func TestEnqueueGivingUpKeepsWaitingDequeue(t *testing.T) {
+	for i := range 200 {
+		ch := New[int]()
+		got := make(chan int, 1)
+		go func() {
+			d, err := ch.Dequeue(context.Background())
+			if err == nil {
+				got <- *d
+			}
+		}()
+		time.Sleep(time.Millisecond) // Dequeue waits in demand now
+
+		done, cancel := context.WithCancel(context.Background())
+		cancel()
+		if err := ch.Enqueue(done, 1); err == nil {
+			if d := <-got; d != 1 {
+				t.Fatalf("got %d, want 1", d)
+			}
+			continue
+		}
+		ch.EnqueueNonblock(2)
+		select {
+		case d := <-got:
+			if d != 2 {
+				t.Fatalf("got %d, want 2", d)
+			}
+		case <-time.After(time.Second):
+			t.Fatalf("iteration %d: Dequeue never served after an Enqueue gave up", i)
+		}
+	}
+}
+
+// DequeueNonblock takes a blocked Enqueue's datum: the Enqueue must return.
+func TestDequeueNonblockReleasesBlockedEnqueue(t *testing.T) {
+	for i := range 200 {
+		ch := New[int]()
+		enqDone := make(chan error, 1)
+		go func() { enqDone <- ch.Enqueue(context.Background(), 7) }()
+		for ch.Size() == 0 {
+			runtime.Gosched()
+		}
+		if d := ch.DequeueNonblock(); d == nil || *d != 7 {
+			t.Fatalf("DequeueNonblock = %v, want 7", d)
+		}
+		select {
+		case <-enqDone:
+		case <-time.After(time.Second):
+			t.Fatalf("iteration %d: Enqueue still blocked after DequeueNonblock took its datum", i)
+		}
+	}
+}

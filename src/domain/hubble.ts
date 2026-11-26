@@ -26,6 +26,12 @@ export interface HubbleFlow {
   readonly summary: string;
   readonly trafficDirection: TrafficDirection;
   readonly authType: AuthType;
+  // NOTE: Network policies the agent correlated with the flow, as names
+  // (see helpers.policyNames); usually only on a connection's first packet.
+  readonly egressAllowedBy?: string[];
+  readonly ingressAllowedBy?: string[];
+  readonly egressDeniedBy?: string[];
+  readonly ingressDeniedBy?: string[];
 }
 
 export interface HubbleService {

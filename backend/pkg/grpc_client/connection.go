@@ -68,6 +68,13 @@ func (uc *Connection) IsConnected() bool {
 	return uc.isReady()
 }
 
+func (uc *Connection) IsShutdown() bool {
+	uc.lock()
+	defer uc.unlock()
+
+	return uc.Connection != nil && uc.Connection.GetState() == connectivity.Shutdown
+}
+
 func (uc *Connection) isReady() bool {
 	conn := uc.Connection
 	if conn == nil {
@@ -85,7 +92,11 @@ func (uc *Connection) unlock() {
 	uc.mx.Unlock()
 }
 
+// logAttrs takes the lock: connect() sets the handle under it.
 func (uc *Connection) logAttrs() []any {
+	uc.lock()
+	defer uc.unlock()
+
 	attrs := []any{
 		"key", uc.Tag.Key,
 		"addr", uc.addr,

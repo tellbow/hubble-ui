@@ -56,6 +56,7 @@ func (srv *APIServer) ServiceMapStream(
 	if err != nil {
 		return err
 	}
+	defer flows.Stop()
 
 	var flowStream flow_stream.FlowStreamInterface
 	if eventsRequested.FlowsRequired() {

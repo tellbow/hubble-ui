@@ -103,7 +103,28 @@ export const hubbleFlowFromObj = (obj: any): HubbleFlow | null => {
     summary: obj.summary,
     trafficDirection,
     authType,
+    egressAllowedBy: policyNames(obj.egressAllowedBy),
+    ingressAllowedBy: policyNames(obj.ingressAllowedBy),
+    egressDeniedBy: policyNames(obj.egressDeniedBy),
+    ingressDeniedBy: policyNames(obj.ingressDeniedBy),
   };
+};
+
+const derivedFromLabel = 'reserved:io.cilium.policy.derived-from';
+
+// NOTE: A policy is named namespace/name (just name for clusterwide ones).
+// Policies the agent adds itself (e.g. allowing localhost) have no name; their
+// origin is in the derived-from label, shown as `<cilium-internal>/<origin>`.
+export const policyNames = (policies?: Pick<flowpb.Policy, 'name' | 'namespace' | 'labels'>[]) => {
+  return (policies ?? []).map(p => {
+    if (p.name) return p.namespace ? `${p.namespace}/${p.name}` : p.name;
+
+    const derived = (p.labels ?? [])
+      .find(l => l.startsWith(`${derivedFromLabel}=`))
+      ?.slice(derivedFromLabel.length + 1);
+
+    return `<cilium-internal>/${derived || 'unknown'}`;
+  });
 };
 
 export const isoTimeToHubbleTime = (t: string | null): Time | null => {
@@ -167,6 +188,10 @@ export const hubbleFlowFromPb = (flow: flowpb.Flow): HubbleFlow => {
     summary: flow.summary,
     trafficDirection,
     authType,
+    egressAllowedBy: policyNames(flow.egressAllowedBy),
+    ingressAllowedBy: policyNames(flow.ingressAllowedBy),
+    egressDeniedBy: policyNames(flow.egressDeniedBy),
+    ingressDeniedBy: policyNames(flow.ingressDeniedBy),
   };
 };
 

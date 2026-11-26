@@ -53,7 +53,6 @@ type GRPCClient struct {
 	// NOTE: Yes, very dumb architecture with only one mutex
 	mx          *sync.RWMutex
 	connections ConnectionsMap
-	connecting  sync.Map
 
 	// NOTE: The data used for checking reconnction frequency
 	lastReconnectAt time.Time
@@ -97,7 +96,6 @@ func New(
 		subs:           dllist.NewDLList[StatusSub](),
 		mx:             new(sync.RWMutex),
 		connections:    make(ConnectionsMap),
-		connecting:     sync.Map{},
 	}, nil
 }
 
@@ -112,6 +110,10 @@ func (c *GRPCClient) GetStableConnection(ctx context.Context) (
 	return uc.Connection, nil
 }
 
+// Reconnect gives a caller whose call failed a connection to retry on. The
+// connection is shared by every stream and gRPC reconnects it by itself, so it
+// is replaced only once it is shut down: closing it here would cancel the
+// calls of every other stream on it ("the client connection is closing").
 func (c *GRPCClient) Reconnect(ctx context.Context) (*grpc.ClientConn, error) {
 	connTag, err := c.connProps.Tag(ctx)
 	if err != nil {
@@ -119,21 +121,10 @@ func (c *GRPCClient) Reconnect(ctx context.Context) (*grpc.ClientConn, error) {
 	}
 
 	c.mx.Lock()
-	_, isReconnecting := c.connecting.Load(connTag.Key)
-	if isReconnecting {
-		c.mx.Unlock()
-
-		return c.GetStableConnection(ctx)
-	}
-
 	conn := c.connections[connTag.Key]
-	if conn != nil {
-		if err := conn.Disconnect(); err != nil {
-			c.log.Warn("reconnect: old connection disconnect failed", "error", err)
-		}
-
+	if conn != nil && conn.IsShutdown() {
 		delete(c.connections, connTag.Key)
-		c.log.Debug("reconnect: current connection is dropped", conn.logAttrs()...)
+		c.log.Debug("reconnect: shut down connection is dropped", conn.logAttrs()...)
 	}
 	c.mx.Unlock()
 
@@ -175,8 +166,6 @@ func (c *GRPCClient) ensureContext(ctx context.Context) (
 
 	c.mx.Lock()
 	conn := c.handleExistingConnection(&connTag)
-	c.connecting.Store(connectionKey, struct{}{})
-	defer c.connecting.Delete(connectionKey)
 	isNew := false
 
 	if conn == nil {
@@ -285,10 +274,10 @@ func (c *GRPCClient) establishConnection(
 	ctx context.Context,
 	conn *Connection,
 ) error {
+	logAttrs := conn.logAttrs()
+
 	conn.lock()
 	defer conn.unlock()
-
-	logAttrs := conn.logAttrs()
 	c.log.Debug("about to establish the connection", logAttrs...)
 
 	firstConnection := conn.Connection == nil

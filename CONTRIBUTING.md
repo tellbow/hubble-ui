@@ -4,8 +4,8 @@
 
 ## Getting Started
 
-- Read the [README](https://github.com/cilium/hubble-ui/blob/master/README.md) to understand how `hubble-ui` works and its use cases.
-- Check out the [issues list](https://github.com/cilium/hubble-ui/issues) for open tasks.
+- Read the [README](https://github.com/tellbow/hubble-ui/blob/master/README.md) to understand how `hubble-ui` works and its use cases.
+- Check out the [issues list](https://github.com/tellbow/hubble-ui/issues) for open tasks.
 
 ## 🛠 Development
 

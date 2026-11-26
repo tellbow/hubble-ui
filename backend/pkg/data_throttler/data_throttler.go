@@ -34,6 +34,7 @@ func New[T any](delay time.Duration, maxLength int) (*DataThrottler[T], error) {
 		buffer:    deque.New[T](maxLength),
 		maxLength: maxLength,
 		delay:     delay,
+		stop:      make(chan struct{}),
 		stopOnce:  sync.Once{},
 	}, nil
 }
@@ -91,7 +92,11 @@ func (d *DataThrottler[T]) Ticker() <-chan struct{} {
 				}
 
 				d.mx.Unlock()
-				d.tickerCh <- struct{}{}
+				select {
+				case d.tickerCh <- struct{}{}:
+				case <-d.stop:
+					return
+				}
 			case <-d.stop:
 				return
 			}
@@ -124,7 +129,9 @@ func (d *DataThrottler[T]) Stop() {
 	defer d.mx.Unlock()
 
 	d.stopOnce.Do(func() {
-		d.ticker.Stop()
+		if d.ticker != nil {
+			d.ticker.Stop()
+		}
 		close(d.stop)
 	})
 }

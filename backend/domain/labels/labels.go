@@ -10,6 +10,8 @@ type SpecialLabel string
 const (
 	ReservedLabelHost          ReservedLabel = "reserved:host"
 	ReservedLabelWorld         ReservedLabel = "reserved:world"
+	ReservedLabelWorldIPv4     ReservedLabel = "reserved:world-ipv4"
+	ReservedLabelWorldIPv6     ReservedLabel = "reserved:world-ipv6"
 	ReservedLabelHealth        ReservedLabel = "reserved:health"
 	ReservedLabelInit          ReservedLabel = "reserved:init"
 	ReservedLabelRemoteNode    ReservedLabel = "reserved:remote-node"
@@ -45,7 +47,9 @@ func Props(labels []string) *LabelProps {
 		k, v := LabelAsKeyValue(lbl, true)
 
 		props.IsHost = props.IsHost || k == string(ReservedLabelHost)
-		props.IsWorld = props.IsWorld || k == string(ReservedLabelWorld)
+		// Dual-stack clusters label world traffic world-ipv4 / world-ipv6.
+		props.IsWorld = props.IsWorld || k == string(ReservedLabelWorld) ||
+			k == string(ReservedLabelWorldIPv4) || k == string(ReservedLabelWorldIPv6)
 		props.IsInit = props.IsInit || k == string(ReservedLabelInit)
 		props.IsHealth = props.IsHealth || k == string(ReservedLabelHealth)
 		props.IsRemoteNode = props.IsRemoteNode || k == string(

@@ -92,8 +92,8 @@ export class Store {
     this.currentFrame.applyFrame(this.globalFrame, filters);
   }
 
-  public applyNamespaceChange(ns: NamespaceDescriptor) {
-    this.namespaces.applyChange(ns);
+  public applyNamespaceChange(ns: NamespaceDescriptor, change: StateChange) {
+    this.namespaces.applyChange(ns, change);
   }
 
   public setFeatures(features: FeatureFlags) {

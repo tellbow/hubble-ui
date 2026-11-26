@@ -1,6 +1,7 @@
 import { makeAutoObservable } from 'mobx';
 
 import { NamespaceDescriptor } from '~/domain/namespaces';
+import { StateChange } from '~/domain/misc';
 
 export class NamespaceStore {
   // private _seenNamespaces: Map<string, boolean> = new Map();
@@ -70,7 +71,12 @@ export class NamespaceStore {
     });
   }
 
-  public applyChange(ns: NamespaceDescriptor) {
+  public applyChange(ns: NamespaceDescriptor, change: StateChange) {
+    if (change === StateChange.Deleted) {
+      this._relayNamespaces.delete(ns.namespace);
+      return;
+    }
+
     this.set(ns);
   }
 

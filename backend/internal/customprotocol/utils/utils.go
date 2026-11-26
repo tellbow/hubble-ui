@@ -47,9 +47,7 @@ func ParseMessageFromJSON(b []byte) (*message.Message, error) {
 		return nil, errors.Wrapf(err, "failed to JSON Unmarshal cppb.Message")
 	}
 
-	return &message.Message{
-		Proto: &cpMessage,
-	}, nil
+	return message.NewFromProto(&cpMessage, nil), nil
 }
 
 func CopyHeaders(dst, src http.Header) {

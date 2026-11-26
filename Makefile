@@ -37,11 +37,11 @@ DOCKER_BUILDER := $(shell docker buildx ls | grep -E -e "[a-zA-Z0-9-]+ \*" | cut
 builder-info: ## Print information about the docker builder that will be used for building images.
 	@echo "Using Docker Buildx builder \"$(DOCKER_BUILDER)\" with build flags \"$(DOCKER_FLAGS)\"."
 
-DOCKER_REGISTRY ?= quay.io
+DOCKER_REGISTRY ?= ghcr.io
 
-# Set DOCKER_DEV_ACCOUNT with "cilium" by default
+# Set DOCKER_DEV_ACCOUNT with "tellbow" by default
 ifeq ($(DOCKER_DEV_ACCOUNT),)
-    DOCKER_DEV_ACCOUNT=cilium
+    DOCKER_DEV_ACCOUNT=tellbow
 endif
 
 # Set DOCKER_IMAGE_TAG with "latest" by default

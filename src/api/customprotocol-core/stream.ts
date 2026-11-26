@@ -68,6 +68,11 @@ export class Stream<H extends HandlerTypes = {}> extends EventEmitter<Union<Hand
 
   protected pendingRequests: Set<RepeatableRequest> = new Set();
 
+  // NOTE: The id of the last message received, sent with every request: the
+  // backend sends that message's successor, or the same message again if its
+  // answer was lost (e.g. the request timed out). '0' means none yet.
+  private lastDatumId = '0';
+
   public static generateTraceId(): string {
     return Math.random().toString(36).slice(2);
   }
@@ -103,6 +108,7 @@ export class Stream<H extends HandlerTypes = {}> extends EventEmitter<Union<Hand
 
     this.resolveChannelPromise = void 0;
     this.channelIdPromise = void 0;
+    this.lastDatumId = '0';
 
     this.pendingRequests.forEach(req => req.abort());
 
@@ -240,7 +246,8 @@ export class Stream<H extends HandlerTypes = {}> extends EventEmitter<Union<Hand
     const traceId = Stream.generateTraceId();
     const stub = Message.newMessage(this.opts.route)
       .setTraceId(traceId)
-      .setChannelId(channelId || void 0);
+      .setChannelId(channelId || void 0)
+      .setLastDatumId(this.lastDatumId);
 
     const msg = fn(stub);
 
@@ -294,6 +301,7 @@ export class Stream<H extends HandlerTypes = {}> extends EventEmitter<Union<Hand
         const respMsg = Message.newFromHTTPResult(resp, !!this.opts.useJSON);
 
         if (isCreated) this.resolveChannelPromise?.(respMsg.channelId);
+        if (respMsg.lastDatumId) this.lastDatumId = respMsg.lastDatumId;
         return [msg, respMsg];
       } else {
         return [msg, null];

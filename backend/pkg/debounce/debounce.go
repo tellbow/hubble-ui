@@ -17,9 +17,7 @@ func New(delay time.Duration) *Debounce {
 }
 
 func (d *Debounce) Touch() {
-	if d.ensureTicker() {
-		return
-	}
+	d.ensureTicker()
 
 	if !d.ticker.Stop() {
 		select {
@@ -44,11 +42,13 @@ func (d *Debounce) Stop() {
 	d.ticker.Stop()
 }
 
-func (d *Debounce) ensureTicker() bool {
-	if d.ticker == nil {
-		d.ticker = time.NewTimer(d.delay)
-		return true
+// ensureTicker makes a stopped timer: the debounce stays idle until the first
+// Touch, so Triggered never fires for a stream that had nothing to send.
+func (d *Debounce) ensureTicker() {
+	if d.ticker != nil {
+		return
 	}
 
-	return false
+	d.ticker = time.NewTimer(d.delay)
+	d.ticker.Stop()
 }

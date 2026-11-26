@@ -124,3 +124,20 @@ func logInternal(t *testing.T, rc *RateCounter) {
 	// 	rc.quants,
 	// )
 }
+
+// Run with -race: polls of one channel count and read concurrently.
+func TestConcurrentUse(t *testing.T) {
+	rc := New()
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for range 1000 {
+			rc.Count()
+		}
+	}()
+	for range 1000 {
+		_ = rc.Rate()
+		_ = rc.LastCount()
+	}
+	<-done
+}

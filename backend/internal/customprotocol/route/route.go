@@ -130,11 +130,7 @@ func (r *Route) pollChannel(
 			Build()
 	}
 
-	if pollTimeout := r.timings.RouteResumePollTimeout; pollTimeout == 0 {
-		respptr, err = ch.DequeueOutgoingNonblock()
-	} else {
-		respptr, err = ch.DequeueOutgoingTimeout(pollTimeout)
-	}
+	respptr, err = ch.DequeueOutgoingAcked(msg.LastDatumId(), r.timings.RouteResumePollTimeout)
 
 	outgoingExists = respptr != nil
 	handlerWannaTerminate = respptr != nil && respptr.IsTerminated()
@@ -198,7 +194,7 @@ func (r *Route) pollChannel(
 		"resp.Errors", resp.Errors(),
 		"size-of-resp.ResponseCookies", len(cookies))
 
-	respMsg, err := resp.WithPollDelay(ch.GetClientPollDelay()).Build()
+	respMsg, err := resp.WithPollDelay(ch.GetClientPollDelay(outgoingExists)).Build()
 	if respMsg != nil && respMsg.IsTerminated() && respMsg.IsEmpty() {
 		r.log.Debug("closing and dropping channel", logAttrs...)
 

@@ -19,7 +19,6 @@ concurrency:
 
 jobs:
   analyze:
-    if: github.repository == 'cilium/hubble-ui'
     name: Analyze
     runs-on: ubuntu-latest
     permissions:
