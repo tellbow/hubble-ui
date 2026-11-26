@@ -29,6 +29,10 @@ func (c *Channels) SetByIdUnsafe(ch *Channel) {
 	c.d[ch.Id] = ch
 }
 
+func (c *Channels) SizeUnsafe() int {
+	return len(c.d)
+}
+
 func (c *Channels) GetByIdUnsafe(id string) (*Channel, bool) {
 	ch, ok := c.d[id]
 	return ch, ok

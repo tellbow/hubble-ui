@@ -19,7 +19,12 @@ import (
 // handler once (on first incoming message) and try to resume it by special
 // handle in future (on further messages).
 
+// maxBodyBytes bounds a request; the frontend's largest, a stream's first
+// message with its filters, is a few KB. The chart's nginx allows 1 GB.
+const maxBodyBytes = 1 << 20
+
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	req.Body = http.MaxBytesReader(w, req.Body, maxBodyBytes)
 	msg, isJSON, err := r.parseHTTPRequest(req)
 	if err != nil {
 		r.log.Error("failed to extract customprotocol.Request", "error", err)

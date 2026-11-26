@@ -1,7 +1,9 @@
 package cors
 
 import (
+	"net"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/cilium/hubble-ui/backend/pkg/set"
@@ -36,8 +38,14 @@ func (cs *CORSServer) HandlePreflight(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cs *CORSServer) WriteControlHeaders(w http.ResponseWriter, r *http.Request) {
+	origin := cs.getOrigin(w, r)
+	if origin == "" {
+		return
+	}
+
 	header := w.Header()
-	header.Set("Access-Control-Allow-Origin", cs.getOrigin(w, r))
+	header.Set("Access-Control-Allow-Origin", origin)
+	header.Add("Vary", "Origin")
 	header.Set("Access-Control-Allow-Methods", cs.getAllowMethods(w, r))
 	header.Set("Access-Control-Allow-Credentials", "true")
 
@@ -73,13 +81,23 @@ func (cs *CORSServer) getOrigin(_ http.ResponseWriter, r *http.Request) string {
 		return cs.opts.Origin
 	}
 
+	// NOTE: CORS is for a frontend dev server on this machine. Echoing any
+	// origin would let every website read the cluster's flows.
 	requesterOrigin := r.Header.Get("Origin")
-	if len(requesterOrigin) > 0 {
+	if u, err := url.Parse(requesterOrigin); err == nil && isLoopback(u.Hostname()) {
 		return requesterOrigin
 	}
 
-	// NOTE: It will not work in Chrome
-	return "*"
+	return ""
+}
+
+func isLoopback(host string) bool {
+	if host == "localhost" {
+		return true
+	}
+
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
 
 func (cs *CORSServer) makeSetFromHeaderValues(v string) set.Set[string] {
