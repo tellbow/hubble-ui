@@ -78,7 +78,7 @@ export class Router extends EventEmitter<Handlers> {
   }
 
   public searchParamsUpdated(params: URLSearchParams) {
-    console.log('searchParamsUpdated', params.toString());
+    console.debug('searchParamsUpdated', params.toString());
     this.searchParams = params;
 
     this.updateInitializedFields(this._isLocationInitialized, true);
@@ -96,7 +96,7 @@ export class Router extends EventEmitter<Handlers> {
     const isDetached =
       hubbleUIState == null || hubbleUIState.id !== this._latestLocationStateFootprint;
 
-    console.log('locationUpdated: ', loc, app, hubbleUIState, isDetached);
+    console.debug('locationUpdated: ', loc, app, hubbleUIState, isDetached);
     this.emit(Event.LocationUpdated, {
       location: loc,
       hubbleUIState,
@@ -130,7 +130,7 @@ export class Router extends EventEmitter<Handlers> {
 
   public goto(path: string, paramPairs: RouteParamPairs = []): this {
     this._transaction.push(RouteAction.path(RoutePathAction.new(path)));
-    console.log(`route path action added: `, path);
+    console.debug(`route path action added: `, path);
     this.updateRouteParams(paramPairs);
 
     return this;
@@ -157,7 +157,7 @@ export class Router extends EventEmitter<Handlers> {
 
     const state = LocationState.empty().setParams(stateParams);
     this._latestLocationStateFootprint = state.id;
-    console.log(`LocationState will be pushed with id: `, state.id);
+    console.debug(`LocationState will be pushed with id: `, state.id);
 
     // NOTE: Every commit will create a new entry in history and mark it with keyed state
     // so that external code could properly react on location changed event.
@@ -211,7 +211,7 @@ export class Router extends EventEmitter<Handlers> {
     if (pairs.length === 0) return;
 
     const actions = pairs.map(pair => RouteAction.param(RouteParamAction.fromPair(pair)));
-    console.log(`adding route params actions`, actions);
+    console.debug(`adding route params actions`, actions);
     this._transaction = this._transaction.concat(actions);
   }
 

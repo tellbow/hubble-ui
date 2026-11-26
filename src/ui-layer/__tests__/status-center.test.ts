@@ -15,9 +15,25 @@ describe('StatusCenter messages', () => {
     expect(center.list[0].intent).toBe(Intent.Critical);
   });
 
+  test('shows a server error repeated by a retrying stream once', () => {
+    const center = new StatusCenter({ maxNotifications: 10 });
+    const debug = jest.spyOn(console, 'debug').mockImplementation(() => {});
+    try {
+      const err = () => new CustomError(1, 3, 'invalid IP address "foo" in filter');
+      center.pushControlStreamErrors([err()]);
+      center.pushStreamsReconnecting();
+      center.pushControlStreamErrors([err()]);
+
+      const errors = center.list.filter(e => e.title === 'Server error occurred');
+      expect(errors).toHaveLength(1);
+    } finally {
+      debug.mockRestore();
+    }
+  });
+
   test('closes the namespace quote and uses the correct verb when observed', () => {
     const center = new StatusCenter({ maxNotifications: 10 });
-    const log = jest.spyOn(console, 'log').mockImplementation(() => {});
+    const log = jest.spyOn(console, 'debug').mockImplementation(() => {});
     try {
       center.pushNamespaceIsNotObserved('team-a');
       center.pushNamespaceIsObserved({ namespace: 'team-a', relay: true });

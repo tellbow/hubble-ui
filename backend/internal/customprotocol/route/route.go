@@ -14,6 +14,12 @@ import (
 
 type RouteKind string
 
+// maxChannels caps the open channels of a route: every service map channel
+// holds a hubble-relay stream, and anyone who reaches the UI can open them.
+const maxChannels = 512
+
+var ErrTooManyChannels = errors.New("too many open streams, try again later")
+
 // NOTE: There is no further division if stream is uni- or bidirectional
 const (
 	OneshotKind RouteKind = "oneshot"
@@ -39,11 +45,28 @@ type Route struct {
 func (r *Route) Poll(ctx context.Context, msg *message.Message) (
 	*message.Message, error,
 ) {
+	resume := r.resumeOneshot
 	if r.isStream() {
-		return r.resumeStream(ctx, msg)
+		resume = r.resumeStream
 	}
 
-	return r.resumeOneshot(ctx, msg)
+	resp, err := resume(ctx, msg)
+	if errors.Is(err, ErrTooManyChannels) {
+		r.log.Warn("refusing a new channel", "max", maxChannels)
+
+		return message.Builder().
+			WithChannelId(msg.ChannelId()).
+			WithTraceId(msg.TraceId()).
+			WithRouteName(r.name).
+			WithTerminated(true).
+			WithNotReady(true).
+			WithEmpty(true).
+			WithError(err).
+			WithStatusCode(http.StatusServiceUnavailable).
+			Build()
+	}
+
+	return resp, err
 }
 
 // NOTE: In theory we can have all the cases how stream is working:
@@ -223,6 +246,10 @@ func (r *Route) getChannel(msg *message.Message) (
 	existing, ok := r.channels.GetByIdUnsafe(cid)
 	if ok {
 		return existing, false, nil
+	}
+
+	if r.channels.SizeUnsafe() >= maxChannels {
+		return nil, false, ErrTooManyChannels
 	}
 
 	chTimings, err := r.timings.ChannelTimings()

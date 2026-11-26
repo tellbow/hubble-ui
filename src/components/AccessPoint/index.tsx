@@ -30,11 +30,11 @@ export const AccessPoint = observer(function AccessPoint(props: Props) {
     <div className={css.accessPoint}>
       <div className={css.icons}>
         <div className={css.circle} ref={connectorRef}>
-          <img src="icons/misc/access-point.svg" />
+          <img src="icons/misc/access-point.svg" alt="" />
         </div>
 
         <div className={css.arrow}>
-          <img src="icons/misc/ap-arrow-violet.svg" />
+          <img src="icons/misc/ap-arrow-violet.svg" alt="" />
         </div>
       </div>
 

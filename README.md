@@ -25,7 +25,7 @@ hubble:
         override: ghcr.io/tellbow/hubble-ui-backend:<tag>
 ```
 
-Every push to `master` also publishes `ghcr.io/tellbow/hubble-ui-ci` and
+Every push to `main` also publishes `ghcr.io/tellbow/hubble-ui-ci` and
 `ghcr.io/tellbow/hubble-ui-backend-ci`, tagged `latest` and with the commit SHA.
 
 ## 🌐 Why Hubble UI?
@@ -45,6 +45,19 @@ workflow builds both images for amd64 and arm64 and pushes them to
 `ghcr.io/tellbow/hubble-ui` and `ghcr.io/tellbow/hubble-ui-backend` with the
 repository's `GITHUB_TOKEN`; no other account or secret is involved.
 
+## 🧪 Tests
+
+```sh
+npm test                                    # frontend unit tests (jest)
+(cd backend && go test -mod=vendor ./...)   # backend unit tests
+npx playwright install chromium             # once
+npm run test:e2e                            # Playwright, in a real browser
+```
+
+The Playwright tests need no cluster: they start the backend in its e2e mode,
+which serves the flows of `e2e/fixtures/demo`, and the production build behind
+`e2e/serve.mjs`, which proxies `/api` as nginx does.
+
 ## 🔁 Upstream
 
 The fork keeps upstream's layout and the Go module path
@@ -54,11 +67,11 @@ without rewriting imports. To backport one:
 ```sh
 git remote add upstream https://github.com/cilium/hubble-ui.git  # once
 git fetch upstream
-git switch -c backport/<topic> master
+git switch -c backport/<topic> main
 git cherry-pick -x <upstream-sha>   # -x records the upstream commit in the message
 ```
 
-Open a pull request against `master` as for any change.
+Open a pull request against `main` as for any change.
 
 ## ⚖️ License
 

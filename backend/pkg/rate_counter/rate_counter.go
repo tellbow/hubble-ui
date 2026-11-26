@@ -12,11 +12,13 @@ import (
 type RateCounter struct {
 	mx     sync.Mutex
 	quants *ring_buffer.RingBuffer[int64]
+	now    func() time.Time // a fake clock in tests
 }
 
 func New() *RateCounter {
 	return &RateCounter{
 		quants: ring_buffer.New[int64](100),
+		now:    time.Now,
 	}
 }
 
@@ -24,14 +26,14 @@ func (rc *RateCounter) Count() {
 	rc.mx.Lock()
 	defer rc.mx.Unlock()
 
-	rc.quants.Push(time.Now().UnixNano())
+	rc.quants.Push(rc.now().UnixNano())
 }
 
 func (rc *RateCounter) Rate() float64 {
 	rc.mx.Lock()
 	defer rc.mx.Unlock()
 
-	now := time.Now().UnixNano()
+	now := rc.now().UnixNano()
 	counter := float64(rc.quants.Size())
 
 	if counter < 2 {

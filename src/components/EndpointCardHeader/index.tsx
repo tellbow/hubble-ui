@@ -6,6 +6,7 @@ import { ServiceCard } from '~/domain/service-map';
 import { EndpointLogo } from './EndpointLogo';
 
 import css from './styles.scss';
+import { clickable } from '~/ui/a11y';
 
 export interface Props {
   card: ServiceCard;
@@ -23,7 +24,7 @@ export const EndpointCardHeader = memo(function EndpointCardHeader(props: Props)
 
   return (
     <div className={css.wrapper}>
-      <div className={css.headline} onClick={props.onHeadlineClick}>
+      <div className={css.headline} {...clickable(props.onHeadlineClick)}>
         <EndpointLogo card={card} />
 
         <div className={css.headings}>

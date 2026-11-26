@@ -115,7 +115,7 @@ export class Store {
   }
 
   public flush(opts?: FlushOptions) {
-    if (opts?.globalFrame) console.log(`flushing global frame`);
+    if (opts?.globalFrame) console.debug(`flushing global frame`);
     this.controls.selectTableFlow(null);
 
     if (!!opts?.globalFrame) {

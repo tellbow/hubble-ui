@@ -223,7 +223,7 @@ export class StoreFrame extends EventEmitter<Handlers> {
 
   @actionBound
   public extendServiceMap(sm: ServiceMap) {
-    console.log(`Frame extendServiceMap`);
+    console.debug(`Frame extendServiceMap`);
     sm.log();
 
     this.interactions.upsertLinks(sm.linksList);

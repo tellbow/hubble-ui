@@ -9,6 +9,7 @@ import type { CommonProps } from './general';
 import { Cell } from './Cell';
 
 import css from './styles.scss';
+import { clickable } from '~/ui/a11y';
 
 export interface RowProps extends CommonProps {
   flow: Flow;
@@ -55,7 +56,7 @@ export const Row = memo<RowProps>(function FlowsTableRow(props) {
   });
 
   return (
-    <div className={className} style={props.style} onClick={onClick}>
+    <div className={className} style={props.style} {...clickable(onClick)}>
       {props.visibleColumns.has(Column.SrcPod) && <Cell flow={props.flow} kind={Column.SrcPod} />}
       {props.visibleColumns.has(Column.SrcIp) && <Cell flow={props.flow} kind={Column.SrcIp} />}
       {props.visibleColumns.has(Column.SrcService) && (

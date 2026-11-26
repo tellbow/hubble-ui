@@ -15,7 +15,8 @@ type Test struct {
 	eps          float64
 }
 
-type CountingFn func(*RateCounter)
+// CountingFn counts on rc, letting time pass with wait.
+type CountingFn func(rc *RateCounter, wait func(time.Duration))
 
 func TestEverything(t *testing.T) {
 	runTests(t, []Test{
@@ -56,14 +57,14 @@ func TestEverything(t *testing.T) {
 			eps:          5,
 		},
 		{
-			countingFn: func(rc *RateCounter) {
+			countingFn: func(rc *RateCounter, wait func(time.Duration)) {
 				for range 5 {
 					rc.Count()
 
-					<-time.After(20 * time.Millisecond)
+					wait(20 * time.Millisecond)
 				}
 
-				<-time.After(100 * time.Millisecond)
+				wait(100 * time.Millisecond)
 			},
 			expectedRate: 25,
 			eps:          1,
@@ -89,19 +90,21 @@ func (td *Test) Run(t *testing.T) {
 	}
 
 	t.Run(testName, func(t *testing.T) {
+		// A fake clock: sleeping made the rates depend on the OS's timers
+		// (macOS oversleeps 10 ms sleeps by ~10%).
+		now := time.Unix(0, 0)
+		wait := func(d time.Duration) { now = now.Add(d) }
+
 		rc := New()
+		rc.now = func() time.Time { return now }
 		if td.countingFn == nil {
 			for range td.countNum {
 				rc.Count()
 
-				// if i == td.countNum-1 {
-				// 	break
-				// }
-
-				<-time.After(td.delay)
+				wait(td.delay)
 			}
 		} else {
-			td.countingFn(rc)
+			td.countingFn(rc, wait)
 		}
 
 		r := rc.Rate()

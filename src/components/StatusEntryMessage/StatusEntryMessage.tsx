@@ -1,7 +1,7 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
 import classNames from 'classnames';
-import { Intent, Spinner } from '@blueprintjs/core';
+import { Icon, Intent, Spinner } from '@blueprintjs/core';
 
 import { unifiedFormatDate } from '~/domain/helpers/time';
 import { StatusEntry } from '~/ui/status-center';
@@ -38,7 +38,10 @@ export const StatusEntryMessage = observer(function StatusEntryMessage(props: Pr
     <div className={classes}>
       {!entry.isPending && !props.iconHidden && (
         <div className={css.icon}>
-          <img src="/icons/misc/exclamation-mark.svg" />
+          <Icon
+            icon={entry.isSuccess ? 'tick' : entry.isInfo || entry.isDebug ? 'info-sign' : 'issue'}
+            size={14}
+          />
         </div>
       )}
       {entry.isPending && !props.iconHidden && (

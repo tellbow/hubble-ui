@@ -60,5 +60,7 @@ yarn-error.log*
 # VSCode
 .vscode
 
-# Cypress
-src/testing/e2e/screenshots
+# Playwright
+/test-results
+/playwright-report
+!/e2e/fixtures/**/*.log

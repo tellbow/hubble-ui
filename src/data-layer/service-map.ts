@@ -1,4 +1,5 @@
 import { BackendAPI, ServiceMapStream } from '~/api/customprotocol';
+import { CustomError } from '~/api/customprotocol-core/errors';
 import { EventParams } from '~/api/general/event-stream';
 
 import { Flow } from '~/domain/flows';
@@ -17,12 +18,14 @@ export enum Event {
   FlowsDiff = 'flows-diff-count',
   FlowFiltersShouldBeChanged = 'filter-entries-should-be-changed',
   ConnectEvent = 'connect-event',
+  Errors = 'errors',
 }
 
 export type Handlers = {
   [Event.FlowsDiff]: (dc: number, f: StoreFrame) => void;
   [Event.FlowFiltersShouldBeChanged]: (fe: FilterEntry[]) => void;
   [Event.ConnectEvent]: (rs: ConnectEvent) => void;
+  [Event.Errors]: (errs: CustomError[]) => void;
 };
 
 export class ServiceMap extends EventEmitter<Handlers> {
@@ -61,6 +64,11 @@ export class ServiceMap extends EventEmitter<Handlers> {
     return this;
   }
 
+  public onErrors(fn: Handlers[Event.Errors]): this {
+    this.on(Event.Errors, fn);
+    return this;
+  }
+
   public async switchToDataMode(dm: DataMode) {
     await this.resetDataFetch(dm);
   }
@@ -74,7 +82,7 @@ export class ServiceMap extends EventEmitter<Handlers> {
 
   public async ensureDataFetch(forDataMode?: DataMode) {
     const dm = forDataMode || this.transferState.dataMode;
-    console.log(`service map: ensuring data fetch for mode: ${dm}`);
+    console.debug(`service map: ensuring data fetch for mode: ${dm}`);
 
     if (dm === DataMode.CiliumStreaming) {
       this.ensureLiveStream();
@@ -102,7 +110,7 @@ export class ServiceMap extends EventEmitter<Handlers> {
   }
 
   public ensureLiveStream(): ServiceMapStream {
-    console.log('ensuring service map data stream');
+    console.debug('ensuring service map data stream');
     if (this.stream != null) return this.stream;
 
     this.stream = this.backendAPI
@@ -110,6 +118,7 @@ export class ServiceMap extends EventEmitter<Handlers> {
       .onServices(svcs => this.store.currentFrame.applyServiceChanges(svcs))
       .onServiceLinks(links => this.store.currentFrame.applyServiceLinkChanges(links))
       .onFlows(flows => this.handleFlows(this.store.currentFrame, flows))
+      .onErrors(errs => this.emit(Event.Errors, errs))
       .onReconnectAttemptFailed((att, err) => this.handleReconnectFail(att, err))
       .onReconnectAttempt((att, d) => this.handleReconnectDelay(att, d))
       .onReconnected(attempt => this.handleReconnected(attempt))
@@ -229,7 +238,6 @@ export class ServiceMap extends EventEmitter<Handlers> {
 
     // NOTE: This call will take from global frame only that data that matches
     // current set of filters
-    console.log(`right before resetCurrentFrame`);
     this.store.resetCurrentFrame(this.store.filters, { preserveActiveCards: true });
 
     await this.ensureDataFetch();

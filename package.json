@@ -6,6 +6,7 @@
   },
   "scripts": {
     "test": "jest",
+    "test:e2e": "playwright test",
     "postinstall": "patch-package && bash ./scripts/post-install.sh",
     "watch:server": "servor ./server/public index.html 8080",
     "watch:client": "NODE_ENV=development webpack --progress",
@@ -66,6 +67,7 @@
     "@babel/preset-react": "8.0.1",
     "@babel/preset-typescript": "8.0.7",
     "@blueprintjs/node-build-scripts": "10.0.1",
+    "@playwright/test": "1.65.0",
     "@protobuf-ts/plugin": "2.11.1",
     "@testing-library/dom": "10.4.2",
     "@testing-library/react": "16.3.3",

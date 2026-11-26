@@ -19,7 +19,7 @@ export const WelcomeScreen = observer(function WelcomeScreen(props: Props) {
   return (
     <div className={css.wrapper}>
       <div className={css.content}>
-        <img src={hubbleLogo} className={css.logo} />
+        <img src={hubbleLogo} className={css.logo} alt="Hubble" />
         <h1 className={css.title}>Welcome!</h1>
         <p className={css.description}>To begin select one of the namespaces:</p>
         {someNamespacesLoaded ? (

@@ -211,7 +211,7 @@ export const ServiceMapApp = observer(function ServiceMapApp() {
       </div>
 
       <DetailsPanel
-        namespace={store.namespaces.current?.namespace || null}
+        namespace={store.namespaces.current?.namespace ?? null}
         transferState={dataLayer.transferState}
         flowsWaitTimeout={flowsWaitTimeout}
         flows={store.currentFrame.interactions.flows}
