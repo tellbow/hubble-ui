@@ -5,11 +5,11 @@ on:
   push:
     branches:
       - 'dev-refactor'
-      - 'master'
+      - 'main'
       - 'v*'
   pull_request:
     branches:
-      - 'master'
+      - 'main'
   schedule:
     - cron: '45 7 * * 3'
 

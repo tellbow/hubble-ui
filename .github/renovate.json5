@@ -26,7 +26,7 @@
   stopUpdatingLabel: "renovate/stop-updating",
   keepUpdatedLabel: "renovate/keep-updated",
   baseBranchPatterns: [
-    'master',
+    'main',
   ],
   postUpdateOptions: [
     'gomodTidy',

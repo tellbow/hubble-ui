@@ -25,7 +25,7 @@ hubble:
         override: ghcr.io/tellbow/hubble-ui-backend:<tag>
 ```
 
-Every push to `master` also publishes `ghcr.io/tellbow/hubble-ui-ci` and
+Every push to `main` also publishes `ghcr.io/tellbow/hubble-ui-ci` and
 `ghcr.io/tellbow/hubble-ui-backend-ci`, tagged `latest` and with the commit SHA.
 
 ## 🌐 Why Hubble UI?
@@ -54,11 +54,11 @@ without rewriting imports. To backport one:
 ```sh
 git remote add upstream https://github.com/cilium/hubble-ui.git  # once
 git fetch upstream
-git switch -c backport/<topic> master
+git switch -c backport/<topic> main
 git cherry-pick -x <upstream-sha>   # -x records the upstream commit in the message
 ```
 
-Open a pull request against `master` as for any change.
+Open a pull request against `main` as for any change.
 
 ## ⚖️ License
 
