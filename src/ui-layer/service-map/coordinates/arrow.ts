@@ -11,6 +11,7 @@ import { CardOffsets } from './helpers/card-offsets';
 export class AccessPointArrow extends Arrow {
   public connectorId: string | null = null;
   public accessPointId: string | null = null;
+  public receiverId: string | null = null;
 
   public verdicts: Set<Verdict> = new Set();
   public authTypes: Set<AuthType> = new Set();
@@ -124,6 +125,7 @@ export class ServiceMapArrow extends Arrow {
   @action
   public addAccessPointArrow(connectorId: string, apId: string): AccessPointArrow {
     const apArrow = AccessPointArrow.new().fromConnector(connectorId).toAccessPoint(apId);
+    apArrow.receiverId = this.receiverId;
 
     this.accessPointArrows.set(apArrow.id, apArrow);
     return apArrow;

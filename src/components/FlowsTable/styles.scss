@@ -1,5 +1,3 @@
-@use 'sass:color';
-
 .wrapper {
   position: relative;
   overflow: hidden;
@@ -7,7 +5,7 @@
   height: 100%;
 
   .table {
-    background-color: #fff;
+    background-color: var(--hubble-ui-background);
   }
 
   .row {
@@ -16,20 +14,20 @@
     width: 100%;
     font-size: 11px;
     line-height: var(--flows-table-row-height);
-    border-bottom: 1px solid #eaeef1;
+    border-bottom: 1px solid var(--hubble-ui-divider);
     font-weight: 500;
-    color: #303030;
+    color: var(--hubble-ui-text-primary);
 
     &.odd {
-      background-color: #fff;
+      background-color: var(--hubble-ui-background);
     }
 
     &.even {
-      background-color: #f2f4f6;
+      background-color: var(--hubble-ui-background-secondary-hover);
     }
 
     &:not(.selected, .head):hover {
-      background-color: #dee4e9;
+      background-color: var(--hubble-ui-background-secondary-selected);
       cursor: pointer;
     }
 
@@ -38,14 +36,14 @@
       top: 0;
       z-index: 2;
       line-height: var(--flows-table-head-height);
-      background-color: #f6f6f6;
-      border-bottom: 1px solid #ebeef1;
+      background-color: var(--hubble-ui-panel-bg);
+      border-bottom: 1px solid var(--hubble-ui-divider);
       text-align: left;
-      color: #5c7080;
+      color: var(--hubble-ui-text-secondary);
     }
 
     &.selected {
-      background-color: color.adjust(#dee4e9, $lightness: -20%);
+      background-color: var(--hubble-ui-row-active);
 
       .cell {
         color: #fff;
@@ -84,7 +82,7 @@
       }
 
       &.verdict {
-        max-width: 130px;
+        max-width: 240px;
       }
 
       &.encrypted {
@@ -107,24 +105,24 @@
           }
 
           .method {
-            color: #6e6e6e;
+            color: var(--hubble-ui-text-secondary);
           }
         }
 
         .direction {
-          color: #6e6e6e;
+          color: var(--hubble-ui-text-secondary);
         }
       }
     }
   }
 
   .emptyValue {
-    color: #999;
+    color: var(--hubble-ui-text-tertiary);
     font-weight: 400;
   }
 
   .subtitle {
-    color: #7b7b7b;
+    color: var(--hubble-ui-text-secondary);
     font-style: italic;
     font-weight: 500;
   }
@@ -140,7 +138,7 @@
   width: 320px;
   height: 100%;
   overflow: auto;
-  background: #fff;
+  background: var(--hubble-ui-background);
   box-shadow: 0 22px 22px rgb(0 0 0 / 25%);
 
   .header {
@@ -153,7 +151,7 @@
     padding-bottom: 16px;
     font-size: 14px;
     line-height: 17px;
-    color: #7b7b7b;
+    color: var(--hubble-ui-text-secondary);
 
     .close {
       display: flex;
@@ -164,12 +162,12 @@
       margin-top: -1px;
       padding: 3px;
       border-radius: 3px;
-      background-color: rgb(255 255 255 / 50%);
-      color: #c2c2c2;
+      background-color: var(--hubble-ui-background);
+      color: var(--hubble-ui-text-tertiary);
 
       &:hover {
         cursor: pointer;
-        color: #a0a0a0;
+        color: var(--hubble-ui-text-secondary);
       }
     }
   }
@@ -187,7 +185,7 @@
       font-size: 12px;
       line-height: 14px;
       font-weight: 700;
-      color: #303030;
+      color: var(--hubble-ui-text-primary);
     }
 
     .body {
@@ -195,7 +193,7 @@
       overflow-x: auto;
       font-size: 12px;
       line-height: 17px;
-      color: #7b7b7b;
+      color: var(--hubble-ui-text-secondary);
       white-space: pre;
 
       .clickable {
@@ -204,7 +202,7 @@
         cursor: pointer;
 
         &:hover {
-          color: #5e5e5e;
+          color: var(--hubble-ui-text-primary);
           text-decoration-color: #929292;
         }
 
@@ -265,18 +263,22 @@
     margin-bottom: 10px;
     margin-left: -$padding;
     border: none;
-    background-color: #ebeef1;
+    background-color: var(--hubble-ui-divider);
   }
 }
 
 .forwardedVerdict {
-  color: #54a82d;
+  color: var(--hubble-ui-text-green);
 }
 
 .droppedVerdict {
-  color: #e26d66;
+  color: var(--hubble-ui-text-red);
+}
+
+.dropReason {
+  color: var(--hubble-ui-text-secondary);
 }
 
 .auditVerdict {
-  color: #d17a31;
+  color: var(--hubble-ui-text-orange);
 }

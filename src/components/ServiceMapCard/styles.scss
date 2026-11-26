@@ -1,7 +1,7 @@
 @import '~/styles/common/layout';
 
 .content {
-  background-color: rgb(255 255 255 / 90%);
+  background-color: var(--hubble-ui-svcmap-card-bg-primary);
 }
 
 .serviceMapCardBackplate {
@@ -43,8 +43,8 @@
     border-radius: 5px;
     padding: 5px 10px;
 
-    color: #929292;
-    background: #eaeaea;
+    color: var(--hubble-ui-svcmap-card-label-text);
+    background: var(--hubble-ui-svcmap-card-label-bg);
 
     margin-bottom: 5px;
 
@@ -62,7 +62,7 @@
   font-size: 14px;
   line-height: 32px;
   font-weight: 500;
-  color: #000;
+  color: var(--hubble-ui-svcmap-card-text-primary);
 
   background: url('icons/misc/icon-cube.png') no-repeat;
   background-size: 13.51px 14.8px;
@@ -80,7 +80,7 @@
   margin: 0 20px;
   padding: 15px;
 
-  border: 1px solid #d4d4d4;
+  border: 1px solid var(--hubble-ui-svcmap-card-container-border);
   border-radius: 10px;
 
   &:last-child {
@@ -95,7 +95,7 @@
     padding-left: 10px;
     margin-top: 5px;
 
-    color: #929a9f;
+    color: var(--hubble-ui-svcmap-card-endpoints-limit);
   }
 }
 

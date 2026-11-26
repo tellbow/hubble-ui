@@ -1,5 +1,3 @@
-@use 'sass:color';
-
 @import '~/styles/common/layout';
 
 .dragPanel {
@@ -12,11 +10,11 @@
   user-select: none;
 
   &:hover {
-    background-color: color.adjust(#f6f6f6, $lightness: -3%);
+    background-color: var(--hubble-ui-background-secondary-hover);
   }
 
   &:active {
-    background-color: color.adjust(#f6f6f6, $lightness: -5%);
+    background-color: var(--hubble-ui-background-secondary-selected);
     cursor: grabbing;
   }
 }
@@ -41,7 +39,8 @@
 }
 
 .right {
-  @include row(flex-start, center);
+  @include row(flex-end, center);
+  gap: 4px;
 
   padding-right: 2.5px;
 }

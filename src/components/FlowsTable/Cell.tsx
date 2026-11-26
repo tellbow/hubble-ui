@@ -6,6 +6,7 @@ import { formatDate } from 'date-fns/format';
 
 import { Flow, Verdict } from '~/domain/flows';
 import { L7FlowType, Layer7 } from '~/domain/hubble';
+import { CiliumDropReason } from '~/domain/cilium';
 import { httpStatus } from '~/domain/http';
 import * as helpers from '~/domain/helpers';
 
@@ -122,7 +123,21 @@ export const Cell = observer(function FlowsTableCell(props: CellProps) {
         [css.droppedVerdict]: props.flow.verdict === Verdict.Dropped,
         [css.auditVerdict]: props.flow.verdict === Verdict.Audit,
       });
-      return <div className={className}>{props.flow.verdictLabel}</div>;
+      const { flow } = props;
+      const isDropped = flow.verdict === Verdict.Dropped;
+      const reason =
+        isDropped && flow.dropReason !== CiliumDropReason.Unknown ? flow.dropReason : null;
+      const deniedBy = [...flow.egressDeniedBy, ...flow.ingressDeniedBy];
+      const title = [reason, deniedBy.length > 0 && `denied by ${deniedBy.join(', ')}`]
+        .filter(Boolean)
+        .join(', ');
+
+      return (
+        <div className={className} title={title || undefined}>
+          {flow.verdictLabel}
+          {reason && <span className={css.dropReason}> · {reason}</span>}
+        </div>
+      );
     }
     case Column.Auth: {
       return <div className={classnames(css.cell, css.auth)}>{props.flow.authTypeLabel}</div>;

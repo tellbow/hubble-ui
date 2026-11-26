@@ -60,7 +60,12 @@ export class Labels {
     'name',
     'functionname',
     'k8s-app',
+    'run',
   ]);
+
+  // Cilium copies namespace labels and policy metadata onto every endpoint;
+  // their keys contain `name` but never name the app.
+  private static readonly notAppKeyPrefixes = ['io.cilium.k8s.', 'namespace.labels.'];
 
   public static readonly ciliumClusterKeys = new Set(['io.cilium.k8s.policy.cluster']);
 
@@ -212,6 +217,7 @@ export class Labels {
   public static findAppNameFromLabelsParts(labels: KV[], normalize = true): string | null {
     for (const lbl of labels) {
       const kv = normalize ? Labels.normalizeLabel(lbl) : lbl;
+      if (Labels.notAppKeyPrefixes.some(p => kv.key.startsWith(p))) continue;
 
       // NOTE: Try to find app name related parts in a label key, very rude..
       const hasAppPartInKey = Labels.containsKeyPart(kv, Labels.appNameNormalizedKeys);

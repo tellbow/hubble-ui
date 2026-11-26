@@ -26,4 +26,30 @@ describe('ServiceCard', () => {
       expect(card.filterEntries.find(e => e.isDNS)).toBeUndefined();
     });
   });
+
+  describe('world card details', () => {
+    test('lists its DNS names', () => {
+      const card = ServiceCard.fromService({ ...services.worldIPv4, dnsNames: ['a.example.com'] });
+      expect(card.worldDetails).toBe('a.example.com');
+    });
+
+    test('shows the most specific CIDR of a CIDR identity', () => {
+      const card = ServiceCard.fromService({
+        ...services.worldIPv4,
+        dnsNames: [],
+        labels: [
+          ...services.worldIPv4.labels,
+          { key: 'cidr:104.0.0.0/8', value: '' },
+          { key: 'cidr:104.16.0.0/13', value: '' },
+        ],
+      });
+      expect(card.worldDetails).toBe('104.16.0.0/13');
+    });
+
+    test('is empty for a plain world card', () => {
+      expect(
+        ServiceCard.fromService({ ...services.worldIPv4, dnsNames: [] }).worldDetails,
+      ).toBeNull();
+    });
+  });
 });

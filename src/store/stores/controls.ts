@@ -15,6 +15,7 @@ export class ControlStore {
 
   public verdicts = new Set<Verdict>();
   public httpStatus: string | null = null;
+  public since: string | null = null;
   public flowFilters: FilterEntry[] = [];
   public showHost = false;
   public showKubeDns = false;
@@ -37,6 +38,7 @@ export class ControlStore {
     store.showCrossNamespaceActivity = this.showCrossNamespaceActivity;
     store.verdicts = deep ? _.cloneDeep(this.verdicts) : this.verdicts;
     store.httpStatus = this.httpStatus;
+    store.since = this.since;
     store.flowFilters = deep ? ffs.map(f => f.clone()) : ffs.slice();
     store.currentApp = this.currentApp;
 
@@ -80,6 +82,13 @@ export class ControlStore {
   setHttpStatus(st: string | null): string | null {
     const prev = this.httpStatus;
     this.httpStatus = st;
+
+    return prev;
+  }
+
+  setSince(since: string | null): string | null {
+    const prev = this.since;
+    this.since = since;
 
     return prev;
   }
@@ -134,6 +143,7 @@ export class ControlStore {
   setFilters(f: Filters) {
     this.verdicts = f.verdicts ?? new Set();
     this.httpStatus = f.httpStatus ?? null;
+    this.since = f.since ?? null;
     this.flowFilters = f.filters || [];
     this.showHost = !f.skipHost;
     this.showKubeDns = !f.skipKubeDns;

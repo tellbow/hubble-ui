@@ -24,7 +24,7 @@
   margin: 35px 0 0;
   font-size: 36px;
   line-height: 36px;
-  color: #333;
+  color: var(--hubble-ui-text-primary);
   font-weight: 600;
 }
 
@@ -33,7 +33,7 @@
   font-size: 14px;
   line-height: 20px;
   font-weight: 500;
-  color: #a6a6a6;
+  color: var(--hubble-ui-text-tertiary);
 }
 
 .namespacesList,
@@ -63,4 +63,56 @@
 .spinnerWrapper {
   display: flex;
   justify-content: flex-start;
+}
+
+.overview {
+  width: 100%;
+  max-width: 460px;
+  margin: 30px 0 40px;
+  padding: 0 16px;
+}
+
+.activity {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+
+  th {
+    text-align: left;
+    font-weight: 500;
+    color: var(--hubble-ui-text-secondary);
+    border-bottom: 1px solid var(--hubble-ui-border);
+    padding: 6px 8px;
+  }
+
+  td {
+    padding: 6px 8px;
+    color: var(--hubble-ui-text-primary);
+  }
+
+  th:not(:first-child),
+  td:not(:first-child) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  tbody tr {
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--hubble-ui-background-secondary-hover);
+    }
+  }
+
+  .dropped {
+    color: var(--hubble-ui-text-red);
+    font-weight: 600;
+  }
+}
+
+.note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--hubble-ui-text-tertiary);
 }

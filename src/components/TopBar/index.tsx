@@ -5,9 +5,10 @@ import { Verdict } from '~/domain/hubble';
 import { FilterEntry } from '~/domain/filtering';
 import { Status } from '~/domain/status';
 import { TransferState } from '~/domain/interactions';
-import { NamespaceDescriptor } from '~/domain/namespaces';
+import { NamespaceActivity, NamespaceDescriptor } from '~/domain/namespaces';
 
 import { FlowsFilterInput } from './FlowsFilterInput';
+import { TimeRangeDropdown } from './TimeRangeDropdown';
 import { VerdictFilterDropdown } from './VerdictFilterDropdown';
 import { VisualFiltersDropdown } from './VisualFiltersDropdown';
 import { NamespaceSelectorDropdown } from './NamespaceSelectorDropdown';
@@ -23,7 +24,10 @@ export interface Props {
   onNamespaceChange?: (ns: NamespaceDescriptor) => void;
   selectedVerdict: Verdict | null;
   onVerdictChange?: (verdict: Verdict | null) => void;
+  namespaceActivity?: NamespaceActivity | null;
   selectedHttpStatus: string | null;
+  since: string | null;
+  onSinceChange?: (since: string | null) => void;
   onHttpStatusChange?: (httpStatus: string | null) => void;
   flowFilters: FilterEntry[];
   onChangeFlowFilters?: (filters: FilterEntry[]) => void;
@@ -46,6 +50,8 @@ export const TopBar = observer(function TopBar(props: Props) {
       <div className={css.spacer} />
       <VerdictFilterDropdown verdict={props.selectedVerdict} onSelect={props.onVerdictChange} />
       <div className={css.border} />
+      <TimeRangeDropdown since={props.since} onSelect={props.onSinceChange} />
+      <div className={css.border} />
       <VisualFiltersDropdown
         showHost={props.showHost}
         onShowHostToggle={props.onShowHostToggle}
@@ -65,6 +71,7 @@ export const TopBar = observer(function TopBar(props: Props) {
         {props.currentNamespace === null ? null : (
           <NamespaceSelectorDropdown
             namespaces={props.namespaces}
+            activity={props.namespaceActivity}
             currentNamespace={props.currentNamespace}
             onChange={props.onNamespaceChange}
           />

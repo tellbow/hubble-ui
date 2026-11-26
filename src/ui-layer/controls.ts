@@ -73,6 +73,11 @@ export class Controls {
     this.dataLayer.controls.toggleShowPrometheusApp();
   }
 
+  public setSince(since: string | null) {
+    this.dataLayer.controls.setSince(since);
+    this.router.commit();
+  }
+
   public setFlowFilters(ff: FilterEntry[] | null) {
     this.dataLayer.controls.setFlowFilters(ff);
     this.router.commit();

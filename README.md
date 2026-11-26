@@ -28,6 +28,15 @@ hubble:
 Every push to `main` also publishes `ghcr.io/tellbow/hubble-ui-ci` and
 `ghcr.io/tellbow/hubble-ui-backend-ci`, tagged `latest` and with the commit SHA.
 
+### Compatibility
+
+The namespace overview on the welcome screen asks hubble-relay for its newest
+10,000 flows once per page load (page loads within 30 s share one answer). It
+asks only for four fields of each flow with `GetFlowsRequest.field_mask`, which
+Cilium 1.16 added. A relay from Cilium 1.15 or older ignores the mask and sends
+whole flows: the counts stay right, but each answer is far larger (about 1–2 KB
+per flow instead of under 100 bytes).
+
 ## 🌐 Why Hubble UI?
 
 Troubleshooting microservices application connectivity is a challenging task. Simply looking at `kubectl get pods` does not indicate dependencies between each service, external APIs, or databases.

@@ -3,7 +3,7 @@ import { FilterEntry, Kind as FilterKind, Direction as FilterDirection } from '.
 
 import { Link, ServiceCard } from '~/domain/service-map';
 import { LinkConnections } from '~/domain/interactions/connections';
-import { Filters } from './filters';
+import { Filters, TimeRanges } from './filters';
 import type { FiltersObject, FiltersKey } from './filters';
 
 import { filterFlow, filterFlowByEntry } from './filter-flow';
@@ -11,7 +11,7 @@ import { filterLink, filterLinkByEntry } from './filter-link';
 import { filterService, filterServiceByEntry } from './filter-service';
 import { FiltersDiff } from './filters-diff';
 
-export { Filters };
+export { Filters, TimeRanges };
 export type { FiltersObject, FiltersKey };
 export { FilterEntry, FilterKind, FilterDirection };
 export { filterFlow, filterFlowByEntry };

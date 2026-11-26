@@ -232,7 +232,7 @@ export class ServiceMap extends EventEmitter<Handlers> {
     // NOTE: Stream is supposed to be null if ServiceMap wasn't ever opened
     await this.dropDataFetch();
 
-    if (f.podFiltersChanged || f.namespace.changed) {
+    if (f.podFiltersChanged || f.namespace.changed || f.since.changed) {
       this.store.flush({ globalFrame: true });
     }
 

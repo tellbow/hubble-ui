@@ -426,6 +426,12 @@ export interface GetControlStreamResponse {
          */
         notification: Notification;
     } | {
+        oneofKind: "activity";
+        /**
+         * @generated from protobuf field: ui.NamespaceActivity activity = 3
+         */
+        activity: NamespaceActivity;
+    } | {
         oneofKind: undefined;
     };
 }
@@ -437,6 +443,40 @@ export interface GetControlStreamResponse_NamespaceStates {
      * @generated from protobuf field: repeated ui.NamespaceState namespaces = 1
      */
     namespaces: NamespaceState[];
+}
+/**
+ * Flows and drops per namespace among the cluster's most recent flows.
+ *
+ * @generated from protobuf message ui.NamespaceActivity
+ */
+export interface NamespaceActivity {
+    /**
+     * @generated from protobuf field: repeated ui.NamespaceActivity.Entry namespaces = 1
+     */
+    namespaces: NamespaceActivity_Entry[];
+    /**
+     * How many of the most recent flows were counted.
+     *
+     * @generated from protobuf field: uint32 flows_counted = 2
+     */
+    flowsCounted: number;
+}
+/**
+ * @generated from protobuf message ui.NamespaceActivity.Entry
+ */
+export interface NamespaceActivity_Entry {
+    /**
+     * @generated from protobuf field: string namespace = 1
+     */
+    namespace: string;
+    /**
+     * @generated from protobuf field: uint32 flows = 2
+     */
+    flows: number;
+    /**
+     * @generated from protobuf field: uint32 dropped = 3
+     */
+    dropped: number;
 }
 /**
  * @generated from protobuf enum ui.EventType
@@ -1595,7 +1635,8 @@ class GetControlStreamResponse$Type extends MessageType<GetControlStreamResponse
     constructor() {
         super("ui.GetControlStreamResponse", [
             { no: 1, name: "namespaces", kind: "message", oneof: "event", T: () => GetControlStreamResponse_NamespaceStates },
-            { no: 2, name: "notification", kind: "message", oneof: "event", T: () => Notification }
+            { no: 2, name: "notification", kind: "message", oneof: "event", T: () => Notification },
+            { no: 3, name: "activity", kind: "message", oneof: "event", T: () => NamespaceActivity }
         ]);
     }
     create(value?: PartialMessage<GetControlStreamResponse>): GetControlStreamResponse {
@@ -1622,6 +1663,12 @@ class GetControlStreamResponse$Type extends MessageType<GetControlStreamResponse
                         notification: Notification.internalBinaryRead(reader, reader.uint32(), options, (message.event as any).notification)
                     };
                     break;
+                case /* ui.NamespaceActivity activity */ 3:
+                    message.event = {
+                        oneofKind: "activity",
+                        activity: NamespaceActivity.internalBinaryRead(reader, reader.uint32(), options, (message.event as any).activity)
+                    };
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1640,6 +1687,9 @@ class GetControlStreamResponse$Type extends MessageType<GetControlStreamResponse
         /* ui.Notification notification = 2; */
         if (message.event.oneofKind === "notification")
             Notification.internalBinaryWrite(message.event.notification, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* ui.NamespaceActivity activity = 3; */
+        if (message.event.oneofKind === "activity")
+            NamespaceActivity.internalBinaryWrite(message.event.activity, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1697,6 +1747,124 @@ class GetControlStreamResponse_NamespaceStates$Type extends MessageType<GetContr
  * @generated MessageType for protobuf message ui.GetControlStreamResponse.NamespaceStates
  */
 export const GetControlStreamResponse_NamespaceStates = new GetControlStreamResponse_NamespaceStates$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class NamespaceActivity$Type extends MessageType<NamespaceActivity> {
+    constructor() {
+        super("ui.NamespaceActivity", [
+            { no: 1, name: "namespaces", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => NamespaceActivity_Entry },
+            { no: 2, name: "flows_counted", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<NamespaceActivity>): NamespaceActivity {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.namespaces = [];
+        message.flowsCounted = 0;
+        if (value !== undefined)
+            reflectionMergePartial<NamespaceActivity>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: NamespaceActivity): NamespaceActivity {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated ui.NamespaceActivity.Entry namespaces */ 1:
+                    message.namespaces.push(NamespaceActivity_Entry.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* uint32 flows_counted */ 2:
+                    message.flowsCounted = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: NamespaceActivity, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated ui.NamespaceActivity.Entry namespaces = 1; */
+        for (let i = 0; i < message.namespaces.length; i++)
+            NamespaceActivity_Entry.internalBinaryWrite(message.namespaces[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 flows_counted = 2; */
+        if (message.flowsCounted !== 0)
+            writer.tag(2, WireType.Varint).uint32(message.flowsCounted);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message ui.NamespaceActivity
+ */
+export const NamespaceActivity = new NamespaceActivity$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class NamespaceActivity_Entry$Type extends MessageType<NamespaceActivity_Entry> {
+    constructor() {
+        super("ui.NamespaceActivity.Entry", [
+            { no: 1, name: "namespace", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "flows", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 3, name: "dropped", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<NamespaceActivity_Entry>): NamespaceActivity_Entry {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.namespace = "";
+        message.flows = 0;
+        message.dropped = 0;
+        if (value !== undefined)
+            reflectionMergePartial<NamespaceActivity_Entry>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: NamespaceActivity_Entry): NamespaceActivity_Entry {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string namespace */ 1:
+                    message.namespace = reader.string();
+                    break;
+                case /* uint32 flows */ 2:
+                    message.flows = reader.uint32();
+                    break;
+                case /* uint32 dropped */ 3:
+                    message.dropped = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: NamespaceActivity_Entry, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string namespace = 1; */
+        if (message.namespace !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.namespace);
+        /* uint32 flows = 2; */
+        if (message.flows !== 0)
+            writer.tag(2, WireType.Varint).uint32(message.flows);
+        /* uint32 dropped = 3; */
+        if (message.dropped !== 0)
+            writer.tag(3, WireType.Varint).uint32(message.dropped);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message ui.NamespaceActivity.Entry
+ */
+export const NamespaceActivity_Entry = new NamespaceActivity_Entry$Type();
 /**
  * @generated ServiceType for protobuf service ui.UI
  */

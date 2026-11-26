@@ -40,20 +40,22 @@ export const sizes = {
 
 // C O L O R S
 export const colors = {
-  arrowStroke: '#ACB1B8',
+  // Neutral colors follow the theme; d3 must set them with .style(), as SVG
+  // attributes take no var().
+  arrowStroke: 'var(--hubble-ui-svcmap-arrow-stroke)',
   arrowStrokeGreen: '#7ED268',
   arrowStrokeRed: '#C50000',
   arrowHandle: '#58626D',
-  startPlateStroke: '#b4b4b4',
-  startPlateFill: '#b4b4b4',
-  connectorFill: '#AEB7C0',
-  connectorStroke: '#58626D',
+  startPlateStroke: 'var(--hubble-ui-svcmap-start-plate)',
+  startPlateFill: 'var(--hubble-ui-svcmap-start-plate)',
+  connectorFill: 'var(--hubble-ui-svcmap-connector-fill)',
+  connectorStroke: 'var(--hubble-ui-svcmap-connector-stroke)',
   connectorFillGreen: '#7ED268',
   connectorStrokeGreen: '#7ED268',
   connectorStrokeRed: '#C50000',
   connectorFillRed: '#C50000',
   feetOuterStroke: '#EBEEF0',
-  feetNeutralStroke: '#C1C8D0',
+  feetNeutralStroke: 'var(--hubble-ui-svcmap-feet-neutral)',
   feetRedStroke: '#C50000',
   padlockGreen: '#2F9316',
 };

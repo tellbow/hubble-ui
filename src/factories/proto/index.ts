@@ -1,10 +1,11 @@
 import * as uipb from '~backend/proto/ui/ui_pb';
 import * as flowpb from '~backend/proto/flow/flow_pb';
+import { Timestamp } from '~backend/proto/google/protobuf/timestamp_pb';
 
 import { EventParams, EventParamsSet } from '~/api/general/event-stream';
 
 import { ReservedLabel, SpecialLabel } from '~/domain/labels';
-import { Filters, FilterEntry, FilterKind } from '~/domain/filtering';
+import { Filters, FilterEntry, FilterKind, TimeRanges } from '~/domain/filtering';
 import { CiliumEventTypes } from '~/domain/cilium';
 import { TCPFlagName } from '~/domain/hubble';
 import * as helpers from '~/domain/helpers';
@@ -20,6 +21,11 @@ export class ProtoFactory {
 
     if (ep.flows) {
       req.eventTypes.push(uipb.EventType.FLOWS);
+    }
+
+    const sinceMs = f.since ? TimeRanges[f.since] : undefined;
+    if (sinceMs != null) {
+      req.since = Timestamp.fromDate(new Date(Date.now() - sinceMs));
     }
 
     if (ep.flow) {

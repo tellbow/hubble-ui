@@ -18,8 +18,7 @@ import css from './styles.scss';
 
 export interface Props<C extends AbstractCard> {
   placement: PlacementStrategy;
-  namespace?: string | null;
-  namespaceBBox?: XYWH | null;
+  namespaceBBoxes?: Map<string, XYWH>;
   cards: Array<C>;
   wasDragged: boolean;
   visibleHeight: number;
@@ -82,12 +81,13 @@ export const MapElements = observer(function MapElements<C extends AbstractCard>
 
   return (
     <>
-      {props.namespaceBBox && props.namespace && (
+      {Array.from(props.namespaceBBoxes ?? [], ([ns, bbox]) => (
         <NamespaceBackplate
-          namespace={props.namespace}
-          xywh={props.namespaceBBox.addMargin(sizes.namespaceBackplatePadding)}
+          key={ns}
+          namespace={ns}
+          xywh={bbox.addMargin(sizes.namespaceBackplatePadding)}
         />
-      )}
+      ))}
 
       <g className="underlay" ref={underlayRef}></g>
       {props.arrows &&

@@ -194,9 +194,23 @@ message GetControlStreamResponse {
     oneof event {
         NamespaceStates namespaces = 1;
         Notification notification = 2;
+        NamespaceActivity activity = 3;
     }
 
     message NamespaceStates {
         repeated NamespaceState namespaces = 1;
     }
+}
+
+// Flows and drops per namespace among the cluster's most recent flows.
+message NamespaceActivity {
+    message Entry {
+        string namespace = 1;
+        uint32 flows = 2;
+        uint32 dropped = 3;
+    }
+
+    repeated Entry namespaces = 1;
+    // How many of the most recent flows were counted.
+    uint32 flows_counted = 2;
 }

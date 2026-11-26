@@ -8,6 +8,7 @@ export enum RouteParam {
   Verdicts = 'verdicts',
   FlowsFilter = 'flows-filter',
   HttpStatus = 'http-status',
+  Since = 'since',
 }
 
 export const routeParamSet = new Set(Object.values(RouteParam));
@@ -21,6 +22,7 @@ export type RouteParams = {
   namespace: string | null;
   verdicts: Set<Verdict>;
   httpStatus: string | null;
+  since: string | null;
   flowFilters: FilterEntry[];
 };
 

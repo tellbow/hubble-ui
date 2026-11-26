@@ -11,15 +11,15 @@
 
 .namespaceBackplate {
   rect {
-    fill: #ebeef0;
-    stroke: #9ba1a8;
+    fill: var(--hubble-ui-ns-backplate-bg);
+    stroke: var(--hubble-ui-ns-backplate-border);
     stroke-dasharray: 10px 10px;
     stroke-width: 2px;
   }
 
   text {
     font-size: 1.75em;
-    fill: #58626d;
+    fill: var(--hubble-ui-ns-backplate-text);
     font-weight: 700;
   }
 }

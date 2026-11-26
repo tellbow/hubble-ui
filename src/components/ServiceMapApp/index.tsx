@@ -143,6 +143,7 @@ export const ServiceMapApp = observer(function ServiceMapApp() {
     flowsWaitTimeout,
     dataLayer.transferState.dataMode,
     store.namespaces.current?.namespace,
+    store.filters.isNarrowed,
   );
 
   const RenderedTopBar = (
@@ -150,12 +151,15 @@ export const ServiceMapApp = observer(function ServiceMapApp() {
       transferState={dataLayer.transferState}
       status={dataLayer.transferState.deploymentStatus || undefined}
       namespaces={store.availableNamespaces}
+      namespaceActivity={store.namespaces.activity}
       currentNamespace={store.currentNamespace}
       onNamespaceChange={ns => ui.controls.namespaceChanged(ns?.namespace)}
       selectedVerdict={store.controls.activeVerdict}
       onVerdictChange={v => ui.controls.toggleVerdict(v)}
       selectedHttpStatus={store.controls.httpStatus}
       onHttpStatusChange={store.controls.setHttpStatus}
+      since={store.controls.since}
+      onSinceChange={since => ui.controls.setSince(since)}
       flowFilters={store.controls.flowFilters}
       onChangeFlowFilters={ff => ui.controls.setFlowFilters(ff)}
       showHost={ui.controls.isHostShown}
@@ -175,6 +179,7 @@ export const ServiceMapApp = observer(function ServiceMapApp() {
         {RenderedTopBar}
         <WelcomeScreen
           namespaces={store.availableNamespaces}
+          activity={store.namespaces.activity}
           onNamespaceChange={ns => ui.controls.namespaceChanged(ns?.namespace)}
         />
       </div>
@@ -185,11 +190,17 @@ export const ServiceMapApp = observer(function ServiceMapApp() {
     <div className={css.app}>
       {RenderedTopBar}
 
-      <div className={css.map}>
+      <div
+        className={css.map}
+        onClick={e => {
+          const target = (e.target as Element).closest('[data-drops-to]');
+          const cardId = target?.getAttribute('data-drops-to');
+          if (cardId) ui.serviceMap.showDropsTo(cardId);
+        }}
+      >
         {store.currentFrame.services.cardsList.length > 0 ? (
           <Map
-            namespace={store.namespaces.current?.namespace}
-            namespaceBBox={ui.serviceMap.placement.namespaceBBox}
+            namespaceBBoxes={ui.serviceMap.placement.namespaceBBoxes}
             placement={ui.serviceMap.placement}
             arrows={ui.serviceMap.arrows}
             arrowsRenderer={ServiceMapArrowsRenderer}

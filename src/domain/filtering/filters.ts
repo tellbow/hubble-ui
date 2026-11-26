@@ -10,6 +10,7 @@ const assignFilterProps = (to: FiltersObject, from: FiltersObject) => {
     namespace: from.namespace,
     verdicts: from.verdicts,
     httpStatus: from.httpStatus,
+    since: from.since,
     filters: from.filters,
     skipHost: from.skipHost,
     skipKubeDns: from.skipKubeDns,
@@ -24,6 +25,8 @@ export interface FiltersObject {
   namespace?: string | null;
   verdicts?: Set<Verdict>;
   httpStatus?: string | null;
+  // How far back the flows go, as in `TimeRanges`; null is all relay has.
+  since?: string | null;
   filters?: FilterEntry[];
   skipHost?: boolean;
   skipKubeDns?: boolean;
@@ -31,12 +34,21 @@ export interface FiltersObject {
   skipPrometheusApp?: boolean;
 }
 
+// The time ranges the UI offers, in ms.
+export const TimeRanges: Record<string, number> = {
+  '5m': 5 * 60_000,
+  '15m': 15 * 60_000,
+  '1h': 60 * 60_000,
+  '6h': 6 * 60 * 60_000,
+};
+
 export type FiltersKey = keyof FiltersObject;
 
 export class Filters implements FiltersObject, Diffable<Filters, FiltersDiff> {
   public namespace?: string | null;
   public verdicts?: Set<Verdict>;
   public httpStatus?: string | null;
+  public since?: string | null;
   public filters?: FilterEntry[];
   public skipHost?: boolean;
   public skipKubeDns?: boolean;
@@ -52,6 +64,7 @@ export class Filters implements FiltersObject, Diffable<Filters, FiltersDiff> {
       namespace: null,
       verdicts: new Set(),
       httpStatus: null,
+      since: null,
       filters: [],
       skipHost: false,
       skipKubeDns: false,
@@ -66,6 +79,11 @@ export class Filters implements FiltersObject, Diffable<Filters, FiltersDiff> {
 
   constructor(obj: FiltersObject) {
     assignFilterProps(this, obj);
+  }
+
+  // Whether the user narrowed the flows beyond the namespace.
+  public get isNarrowed(): boolean {
+    return !!(this.verdicts?.size || this.httpStatus || this.filters?.length);
   }
 
   public setNamespace(ns: string | null) {
@@ -91,6 +109,7 @@ export class Filters implements FiltersObject, Diffable<Filters, FiltersDiff> {
     if (
       this.namespace != rhs.namespace ||
       this.httpStatus != rhs.httpStatus ||
+      this.since != rhs.since ||
       this.skipHost != rhs.skipHost ||
       this.skipKubeDns != rhs.skipKubeDns ||
       this.skipRemoteNode != rhs.skipRemoteNode ||

@@ -3,7 +3,9 @@ package clients
 import (
 	"context"
 	"log/slog"
+	"time"
 
+	"github.com/cilium/cilium/api/v1/flow"
 	"github.com/cilium/cilium/api/v1/observer"
 
 	"github.com/cilium/hubble-ui/backend/internal/flow_stream"
@@ -52,6 +54,35 @@ func (hcl *HubbleClient) FlowStream() flow_stream.FlowStreamInterface {
 
 func (hcl *HubbleClient) ServerStatus(ctx context.Context) (*observer.ServerStatusResponse, error) {
 	return nil, nil
+}
+
+// RecentFlows replays the mocked flows, up to n of them.
+func (hcl *HubbleClient) RecentFlows(ctx context.Context, n uint64) ([]*flow.Flow, error) {
+	src := hcl.duplicateSource()
+	if src == nil {
+		return nil, nil
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	go src.Run(ctx)
+
+	// shortcut: mocked sources never say they are exhausted, so a quiet 300 ms
+	// ends the read; a mock replaying flows slower than that would be cut short.
+	flows := []*flow.Flow{}
+	for uint64(len(flows)) < n {
+		select {
+		case f := <-src.Flows():
+			flows = append(flows, f)
+		case <-time.After(300 * time.Millisecond):
+			return flows, nil
+		case <-ctx.Done():
+			return flows, nil
+		}
+	}
+
+	return flows, nil
 }
 
 func (hcl *HubbleClient) ServerStatusChecker(

@@ -1277,6 +1277,7 @@ type GetControlStreamResponse struct {
 	//
 	//	*GetControlStreamResponse_Namespaces
 	//	*GetControlStreamResponse_Notification
+	//	*GetControlStreamResponse_Activity
 	Event         isGetControlStreamResponse_Event `protobuf_oneof:"event"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1337,6 +1338,15 @@ func (x *GetControlStreamResponse) GetNotification() *Notification {
 	return nil
 }
 
+func (x *GetControlStreamResponse) GetActivity() *NamespaceActivity {
+	if x != nil {
+		if x, ok := x.Event.(*GetControlStreamResponse_Activity); ok {
+			return x.Activity
+		}
+	}
+	return nil
+}
+
 type isGetControlStreamResponse_Event interface {
 	isGetControlStreamResponse_Event()
 }
@@ -1349,9 +1359,69 @@ type GetControlStreamResponse_Notification struct {
 	Notification *Notification `protobuf:"bytes,2,opt,name=notification,proto3,oneof"`
 }
 
+type GetControlStreamResponse_Activity struct {
+	Activity *NamespaceActivity `protobuf:"bytes,3,opt,name=activity,proto3,oneof"`
+}
+
 func (*GetControlStreamResponse_Namespaces) isGetControlStreamResponse_Event() {}
 
 func (*GetControlStreamResponse_Notification) isGetControlStreamResponse_Event() {}
+
+func (*GetControlStreamResponse_Activity) isGetControlStreamResponse_Event() {}
+
+// Flows and drops per namespace among the cluster's most recent flows.
+type NamespaceActivity struct {
+	state      protoimpl.MessageState     `protogen:"open.v1"`
+	Namespaces []*NamespaceActivity_Entry `protobuf:"bytes,1,rep,name=namespaces,proto3" json:"namespaces,omitempty"`
+	// How many of the most recent flows were counted.
+	FlowsCounted  uint32 `protobuf:"varint,2,opt,name=flows_counted,json=flowsCounted,proto3" json:"flows_counted,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NamespaceActivity) Reset() {
+	*x = NamespaceActivity{}
+	mi := &file_ui_ui_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NamespaceActivity) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NamespaceActivity) ProtoMessage() {}
+
+func (x *NamespaceActivity) ProtoReflect() protoreflect.Message {
+	mi := &file_ui_ui_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NamespaceActivity.ProtoReflect.Descriptor instead.
+func (*NamespaceActivity) Descriptor() ([]byte, []int) {
+	return file_ui_ui_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *NamespaceActivity) GetNamespaces() []*NamespaceActivity_Entry {
+	if x != nil {
+		return x.Namespaces
+	}
+	return nil
+}
+
+func (x *NamespaceActivity) GetFlowsCounted() uint32 {
+	if x != nil {
+		return x.FlowsCounted
+	}
+	return 0
+}
 
 type ServiceLink_Latency struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1364,7 +1434,7 @@ type ServiceLink_Latency struct {
 
 func (x *ServiceLink_Latency) Reset() {
 	*x = ServiceLink_Latency{}
-	mi := &file_ui_ui_proto_msgTypes[15]
+	mi := &file_ui_ui_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1376,7 +1446,7 @@ func (x *ServiceLink_Latency) String() string {
 func (*ServiceLink_Latency) ProtoMessage() {}
 
 func (x *ServiceLink_Latency) ProtoReflect() protoreflect.Message {
-	mi := &file_ui_ui_proto_msgTypes[15]
+	mi := &file_ui_ui_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1422,7 +1492,7 @@ type GetControlStreamResponse_NamespaceStates struct {
 
 func (x *GetControlStreamResponse_NamespaceStates) Reset() {
 	*x = GetControlStreamResponse_NamespaceStates{}
-	mi := &file_ui_ui_proto_msgTypes[16]
+	mi := &file_ui_ui_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1434,7 +1504,7 @@ func (x *GetControlStreamResponse_NamespaceStates) String() string {
 func (*GetControlStreamResponse_NamespaceStates) ProtoMessage() {}
 
 func (x *GetControlStreamResponse_NamespaceStates) ProtoReflect() protoreflect.Message {
-	mi := &file_ui_ui_proto_msgTypes[16]
+	mi := &file_ui_ui_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1455,6 +1525,66 @@ func (x *GetControlStreamResponse_NamespaceStates) GetNamespaces() []*NamespaceS
 		return x.Namespaces
 	}
 	return nil
+}
+
+type NamespaceActivity_Entry struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Namespace     string                 `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	Flows         uint32                 `protobuf:"varint,2,opt,name=flows,proto3" json:"flows,omitempty"`
+	Dropped       uint32                 `protobuf:"varint,3,opt,name=dropped,proto3" json:"dropped,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NamespaceActivity_Entry) Reset() {
+	*x = NamespaceActivity_Entry{}
+	mi := &file_ui_ui_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NamespaceActivity_Entry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NamespaceActivity_Entry) ProtoMessage() {}
+
+func (x *NamespaceActivity_Entry) ProtoReflect() protoreflect.Message {
+	mi := &file_ui_ui_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NamespaceActivity_Entry.ProtoReflect.Descriptor instead.
+func (*NamespaceActivity_Entry) Descriptor() ([]byte, []int) {
+	return file_ui_ui_proto_rawDescGZIP(), []int{15, 0}
+}
+
+func (x *NamespaceActivity_Entry) GetNamespace() string {
+	if x != nil {
+		return x.Namespace
+	}
+	return ""
+}
+
+func (x *NamespaceActivity_Entry) GetFlows() uint32 {
+	if x != nil {
+		return x.Flows
+	}
+	return 0
+}
+
+func (x *NamespaceActivity_Entry) GetDropped() uint32 {
+	if x != nil {
+		return x.Dropped
+	}
+	return 0
 }
 
 var File_ui_ui_proto protoreflect.FileDescriptor
@@ -1543,17 +1673,27 @@ const file_ui_ui_proto_rawDesc = "" +
 	"\vdestination\x18\x02 \x03(\v2\x11.ui.ServiceFilterR\vdestination\x12)\n" +
 	"\x10destination_port\x18\x03 \x03(\tR\x0fdestinationPort\x12'\n" +
 	"\averdict\x18\x04 \x03(\x0e2\r.flow.VerdictR\averdict\"\x19\n" +
-	"\x17GetControlStreamRequest\"\xf2\x01\n" +
+	"\x17GetControlStreamRequest\"\xa7\x02\n" +
 	"\x18GetControlStreamResponse\x12N\n" +
 	"\n" +
 	"namespaces\x18\x01 \x01(\v2,.ui.GetControlStreamResponse.NamespaceStatesH\x00R\n" +
 	"namespaces\x126\n" +
-	"\fnotification\x18\x02 \x01(\v2\x10.ui.NotificationH\x00R\fnotification\x1aE\n" +
+	"\fnotification\x18\x02 \x01(\v2\x10.ui.NotificationH\x00R\fnotification\x123\n" +
+	"\bactivity\x18\x03 \x01(\v2\x15.ui.NamespaceActivityH\x00R\bactivity\x1aE\n" +
 	"\x0fNamespaceStates\x122\n" +
 	"\n" +
 	"namespaces\x18\x01 \x03(\v2\x12.ui.NamespaceStateR\n" +
 	"namespacesB\a\n" +
-	"\x05event*\x83\x01\n" +
+	"\x05event\"\xcc\x01\n" +
+	"\x11NamespaceActivity\x12;\n" +
+	"\n" +
+	"namespaces\x18\x01 \x03(\v2\x1b.ui.NamespaceActivity.EntryR\n" +
+	"namespaces\x12#\n" +
+	"\rflows_counted\x18\x02 \x01(\rR\fflowsCounted\x1aU\n" +
+	"\x05Entry\x12\x1c\n" +
+	"\tnamespace\x18\x01 \x01(\tR\tnamespace\x12\x14\n" +
+	"\x05flows\x18\x02 \x01(\rR\x05flows\x12\x18\n" +
+	"\adropped\x18\x03 \x01(\rR\adropped*\x83\x01\n" +
 	"\tEventType\x12\x11\n" +
 	"\rUNKNOWN_EVENT\x10\x00\x12\b\n" +
 	"\x04FLOW\x10\x01\x12\x17\n" +
@@ -1595,7 +1735,7 @@ func file_ui_ui_proto_rawDescGZIP() []byte {
 }
 
 var file_ui_ui_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_ui_ui_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_ui_ui_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_ui_ui_proto_goTypes = []any{
 	(EventType)(0),                                   // 0: ui.EventType
 	(IPProtocol)(0),                                  // 1: ui.IPProtocol
@@ -1615,70 +1755,74 @@ var file_ui_ui_proto_goTypes = []any{
 	(*ServiceLinkFilter)(nil),                        // 15: ui.ServiceLinkFilter
 	(*GetControlStreamRequest)(nil),                  // 16: ui.GetControlStreamRequest
 	(*GetControlStreamResponse)(nil),                 // 17: ui.GetControlStreamResponse
-	(*ServiceLink_Latency)(nil),                      // 18: ui.ServiceLink.Latency
-	(*GetControlStreamResponse_NamespaceStates)(nil), // 19: ui.GetControlStreamResponse.NamespaceStates
-	(*timestamppb.Timestamp)(nil),                    // 20: google.protobuf.Timestamp
-	(*GetStatusRequest)(nil),                         // 21: ui.GetStatusRequest
-	(*flow.Flow)(nil),                                // 22: flow.Flow
-	(*Notification)(nil),                             // 23: ui.Notification
-	(*flow.FlowFilter)(nil),                          // 24: flow.FlowFilter
-	(*flow.Workload)(nil),                            // 25: flow.Workload
-	(flow.Verdict)(0),                                // 26: flow.Verdict
-	(flow.AuthType)(0),                               // 27: flow.AuthType
-	(*durationpb.Duration)(nil),                      // 28: google.protobuf.Duration
-	(*GetStatusResponse)(nil),                        // 29: ui.GetStatusResponse
+	(*NamespaceActivity)(nil),                        // 18: ui.NamespaceActivity
+	(*ServiceLink_Latency)(nil),                      // 19: ui.ServiceLink.Latency
+	(*GetControlStreamResponse_NamespaceStates)(nil), // 20: ui.GetControlStreamResponse.NamespaceStates
+	(*NamespaceActivity_Entry)(nil),                  // 21: ui.NamespaceActivity.Entry
+	(*timestamppb.Timestamp)(nil),                    // 22: google.protobuf.Timestamp
+	(*GetStatusRequest)(nil),                         // 23: ui.GetStatusRequest
+	(*flow.Flow)(nil),                                // 24: flow.Flow
+	(*Notification)(nil),                             // 25: ui.Notification
+	(*flow.FlowFilter)(nil),                          // 26: flow.FlowFilter
+	(*flow.Workload)(nil),                            // 27: flow.Workload
+	(flow.Verdict)(0),                                // 28: flow.Verdict
+	(flow.AuthType)(0),                               // 29: flow.AuthType
+	(*durationpb.Duration)(nil),                      // 30: google.protobuf.Duration
+	(*GetStatusResponse)(nil),                        // 31: ui.GetStatusResponse
 }
 var file_ui_ui_proto_depIdxs = []int32{
 	0,  // 0: ui.GetEventsRequest.event_types:type_name -> ui.EventType
 	7,  // 1: ui.GetEventsRequest.blacklist:type_name -> ui.EventFilter
 	7,  // 2: ui.GetEventsRequest.whitelist:type_name -> ui.EventFilter
-	20, // 3: ui.GetEventsRequest.since:type_name -> google.protobuf.Timestamp
-	21, // 4: ui.GetEventsRequest.status_request:type_name -> ui.GetStatusRequest
-	20, // 5: ui.GetEventsResponse.timestamp:type_name -> google.protobuf.Timestamp
+	22, // 3: ui.GetEventsRequest.since:type_name -> google.protobuf.Timestamp
+	23, // 4: ui.GetEventsRequest.status_request:type_name -> ui.GetStatusRequest
+	22, // 5: ui.GetEventsResponse.timestamp:type_name -> google.protobuf.Timestamp
 	5,  // 6: ui.GetEventsResponse.events:type_name -> ui.Event
-	22, // 7: ui.Event.flow:type_name -> flow.Flow
+	24, // 7: ui.Event.flow:type_name -> flow.Flow
 	9,  // 8: ui.Event.namespace_state:type_name -> ui.NamespaceState
 	11, // 9: ui.Event.service_state:type_name -> ui.ServiceState
 	14, // 10: ui.Event.service_link_state:type_name -> ui.ServiceLinkState
 	6,  // 11: ui.Event.flows:type_name -> ui.Flows
-	23, // 12: ui.Event.notification:type_name -> ui.Notification
-	22, // 13: ui.Flows.flows:type_name -> flow.Flow
-	24, // 14: ui.EventFilter.flow_filter:type_name -> flow.FlowFilter
+	25, // 12: ui.Event.notification:type_name -> ui.Notification
+	24, // 13: ui.Flows.flows:type_name -> flow.Flow
+	26, // 14: ui.EventFilter.flow_filter:type_name -> flow.FlowFilter
 	12, // 15: ui.EventFilter.service_filter:type_name -> ui.ServiceFilter
 	15, // 16: ui.EventFilter.service_link_filter:type_name -> ui.ServiceLinkFilter
-	20, // 17: ui.NamespaceDescriptor.creation_timestamp:type_name -> google.protobuf.Timestamp
+	22, // 17: ui.NamespaceDescriptor.creation_timestamp:type_name -> google.protobuf.Timestamp
 	8,  // 18: ui.NamespaceState.namespace:type_name -> ui.NamespaceDescriptor
 	2,  // 19: ui.NamespaceState.type:type_name -> ui.StateChange
-	20, // 20: ui.Service.creation_timestamp:type_name -> google.protobuf.Timestamp
-	25, // 21: ui.Service.workloads:type_name -> flow.Workload
+	22, // 20: ui.Service.creation_timestamp:type_name -> google.protobuf.Timestamp
+	27, // 21: ui.Service.workloads:type_name -> flow.Workload
 	10, // 22: ui.ServiceState.service:type_name -> ui.Service
 	2,  // 23: ui.ServiceState.type:type_name -> ui.StateChange
 	1,  // 24: ui.ServiceLink.ip_protocol:type_name -> ui.IPProtocol
-	26, // 25: ui.ServiceLink.verdict:type_name -> flow.Verdict
-	18, // 26: ui.ServiceLink.latency:type_name -> ui.ServiceLink.Latency
-	27, // 27: ui.ServiceLink.auth_type:type_name -> flow.AuthType
+	28, // 25: ui.ServiceLink.verdict:type_name -> flow.Verdict
+	19, // 26: ui.ServiceLink.latency:type_name -> ui.ServiceLink.Latency
+	29, // 27: ui.ServiceLink.auth_type:type_name -> flow.AuthType
 	13, // 28: ui.ServiceLinkState.service_link:type_name -> ui.ServiceLink
 	2,  // 29: ui.ServiceLinkState.type:type_name -> ui.StateChange
 	12, // 30: ui.ServiceLinkFilter.source:type_name -> ui.ServiceFilter
 	12, // 31: ui.ServiceLinkFilter.destination:type_name -> ui.ServiceFilter
-	26, // 32: ui.ServiceLinkFilter.verdict:type_name -> flow.Verdict
-	19, // 33: ui.GetControlStreamResponse.namespaces:type_name -> ui.GetControlStreamResponse.NamespaceStates
-	23, // 34: ui.GetControlStreamResponse.notification:type_name -> ui.Notification
-	28, // 35: ui.ServiceLink.Latency.min:type_name -> google.protobuf.Duration
-	28, // 36: ui.ServiceLink.Latency.max:type_name -> google.protobuf.Duration
-	28, // 37: ui.ServiceLink.Latency.avg:type_name -> google.protobuf.Duration
-	9,  // 38: ui.GetControlStreamResponse.NamespaceStates.namespaces:type_name -> ui.NamespaceState
-	3,  // 39: ui.UI.GetEvents:input_type -> ui.GetEventsRequest
-	21, // 40: ui.UI.GetStatus:input_type -> ui.GetStatusRequest
-	16, // 41: ui.UI.GetControlStream:input_type -> ui.GetControlStreamRequest
-	4,  // 42: ui.UI.GetEvents:output_type -> ui.GetEventsResponse
-	29, // 43: ui.UI.GetStatus:output_type -> ui.GetStatusResponse
-	17, // 44: ui.UI.GetControlStream:output_type -> ui.GetControlStreamResponse
-	42, // [42:45] is the sub-list for method output_type
-	39, // [39:42] is the sub-list for method input_type
-	39, // [39:39] is the sub-list for extension type_name
-	39, // [39:39] is the sub-list for extension extendee
-	0,  // [0:39] is the sub-list for field type_name
+	28, // 32: ui.ServiceLinkFilter.verdict:type_name -> flow.Verdict
+	20, // 33: ui.GetControlStreamResponse.namespaces:type_name -> ui.GetControlStreamResponse.NamespaceStates
+	25, // 34: ui.GetControlStreamResponse.notification:type_name -> ui.Notification
+	18, // 35: ui.GetControlStreamResponse.activity:type_name -> ui.NamespaceActivity
+	21, // 36: ui.NamespaceActivity.namespaces:type_name -> ui.NamespaceActivity.Entry
+	30, // 37: ui.ServiceLink.Latency.min:type_name -> google.protobuf.Duration
+	30, // 38: ui.ServiceLink.Latency.max:type_name -> google.protobuf.Duration
+	30, // 39: ui.ServiceLink.Latency.avg:type_name -> google.protobuf.Duration
+	9,  // 40: ui.GetControlStreamResponse.NamespaceStates.namespaces:type_name -> ui.NamespaceState
+	3,  // 41: ui.UI.GetEvents:input_type -> ui.GetEventsRequest
+	23, // 42: ui.UI.GetStatus:input_type -> ui.GetStatusRequest
+	16, // 43: ui.UI.GetControlStream:input_type -> ui.GetControlStreamRequest
+	4,  // 44: ui.UI.GetEvents:output_type -> ui.GetEventsResponse
+	31, // 45: ui.UI.GetStatus:output_type -> ui.GetStatusResponse
+	17, // 46: ui.UI.GetControlStream:output_type -> ui.GetControlStreamResponse
+	44, // [44:47] is the sub-list for method output_type
+	41, // [41:44] is the sub-list for method input_type
+	41, // [41:41] is the sub-list for extension type_name
+	41, // [41:41] is the sub-list for extension extendee
+	0,  // [0:41] is the sub-list for field type_name
 }
 
 func init() { file_ui_ui_proto_init() }
@@ -1704,6 +1848,7 @@ func file_ui_ui_proto_init() {
 	file_ui_ui_proto_msgTypes[14].OneofWrappers = []any{
 		(*GetControlStreamResponse_Namespaces)(nil),
 		(*GetControlStreamResponse_Notification)(nil),
+		(*GetControlStreamResponse_Activity)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1711,7 +1856,7 @@ func file_ui_ui_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ui_ui_proto_rawDesc), len(file_ui_ui_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   17,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

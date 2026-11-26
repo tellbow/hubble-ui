@@ -35,7 +35,7 @@ export const ServiceMapArrowBody = observer(function ServiceMapArrowBody(props: 
       .enter()
       .append('path')
       .attr('class', 'line')
-      .attr('stroke', colors.arrowStroke)
+      .style('stroke', colors.arrowStroke)
       .attr('stroke-width', sizes.linkWidth)
       .attr('fill', 'none')
       .attr('d', d => helpers.svg.arrowLinePath(d.points));
@@ -83,8 +83,8 @@ export const ServiceMapArrowBody = observer(function ServiceMapArrowBody(props: 
       .enter()
       .append('path')
       .attr('class', 'start-plate')
-      .attr('fill', colors.startPlateFill)
-      .attr('stroke', colors.startPlateStroke)
+      .style('fill', colors.startPlateFill)
+      .style('stroke', colors.startPlateStroke)
       .attr('stroke-width', sizes.linkWidth)
       .attr('d', helpers.svg.startPlatePath);
 

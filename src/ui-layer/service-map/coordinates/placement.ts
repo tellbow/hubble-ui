@@ -40,7 +40,30 @@ export interface EntriesGroup {
   bbox: XYWH;
 }
 
-type PlacementFilter = (e: PlacementEntry) => boolean;
+const isInside = (kind: PlacementKind) =>
+  kind === PlacementKind.InsideWithConnections || kind === PlacementKind.InsideWithoutConnections;
+
+const entriesBBox = (entries: Iterable<PlacementEntry>): XYWH | null => {
+  const bbox = geom.xywh(Infinity, Infinity);
+
+  for (const { geometry } of entries) {
+    const { x, y, w, h } = geometry;
+
+    bbox.x = Math.min(bbox.x, x);
+    bbox.y = Math.min(bbox.y, y);
+
+    // Temporarily store here maxX, maxY for a while
+    bbox.w = Math.max(bbox.w, x + w);
+    bbox.h = Math.max(bbox.h, y + h);
+  }
+
+  if (!bbox.isFinite) return null;
+
+  bbox.w -= bbox.x;
+  bbox.h -= bbox.y;
+
+  return bbox;
+};
 
 export type Placement = Array<PlacementEntry>;
 export type CardsPlacement = Map<string, PlacementEntry>;
@@ -120,10 +143,10 @@ export class ServiceMapPlacementStrategy extends PlacementStrategy {
 
   @computed
   public get bbox(): XYWH {
-    let width = this.namespaceBBox ? this.namespaceBBox.w : 0;
-    let height = this.namespaceBBox ? this.namespaceBBox.h : 0;
-    let x = this.namespaceBBox ? this.namespaceBBox.x : 0;
-    let y = this.namespaceBBox ? this.namespaceBBox.y : 0;
+    let width = 0;
+    let height = 0;
+    let x = 0;
+    let y = 0;
 
     this.cardsXYs.forEach((xy: XY, cardId: string) => {
       const wh = this.cardsWHs.get(cardId);
@@ -139,14 +162,26 @@ export class ServiceMapPlacementStrategy extends PlacementStrategy {
     return new XYWH(x, y, width, height);
   }
 
+  // The box of each namespace's cards: one in a namespace, one per namespace
+  // in "All namespaces".
   @computed
-  public get namespaceBBox(): XYWH | null {
-    return this.cardsBBox(e => {
-      const one = e.kind === PlacementKind.InsideWithConnections;
-      const two = e.kind === PlacementKind.InsideWithoutConnections;
+  public get namespaceBBoxes(): Map<string, XYWH> {
+    const byNs = new Map<string, PlacementEntry[]>();
 
-      return one || two;
+    this.cardsPlacement.forEach((e: PlacementEntry) => {
+      const ns = e.card.namespace;
+      if (!ns || !isInside(e.kind)) return;
+
+      byNs.set(ns, [...(byNs.get(ns) ?? []), e]);
     });
+
+    const boxes = new Map<string, XYWH>();
+    byNs.forEach((entries, ns) => {
+      const bbox = entriesBBox(entries);
+      if (bbox != null) boxes.set(ns, bbox);
+    });
+
+    return boxes;
   }
 
   @actionBound
@@ -156,44 +191,39 @@ export class ServiceMapPlacementStrategy extends PlacementStrategy {
     });
   }
 
-  private cardsBBox(filterFn: PlacementFilter): XYWH | null {
-    const bbox = geom.xywh(Infinity, Infinity);
-
-    this.cardsPlacement.forEach((e: PlacementEntry) => {
-      if (!filterFn(e)) return;
-
-      const { x, y, w, h } = e.geometry;
-
-      bbox.x = Math.min(bbox.x, x);
-      bbox.y = Math.min(bbox.y, y);
-
-      // Temporarily store here maxX, maxY for a while
-      bbox.w = Math.max(bbox.w, x + w);
-      bbox.h = Math.max(bbox.h, y + h);
-    });
-
-    if (!bbox.isFinite) return null;
-
-    bbox.w -= bbox.x;
-    bbox.h -= bbox.y;
-
-    return bbox;
-  }
-
   @computed
   private get cardsPlacement(): CardsPlacement {
     const groups = this.placementGroups;
-    const columns: Map<string, PlacementMeta[][]> = new Map();
+    const columns: CardsColumns = new Map();
     const skipAnotherNs = !this.controls.showCrossNamespaceActivity;
+    // NOTE: '' is "All namespaces": there each namespace gets a block of its own
+    const allNamespaces = this.namespaces.current?.namespace === '';
+    const nsColumns = new Map<string, CardsColumns>();
 
     groups.forEach((placements: Set<PlacementMeta>, kind: PlacementKind) => {
       if (skipAnotherNs && kind === PlacementKind.AnotherNamespace) return;
+
+      if (allNamespaces && isInside(kind)) {
+        const byNs = new Map<string, Set<PlacementMeta>>();
+        placements.forEach(p => {
+          const ns = p.card.namespace ?? '';
+          byNs.set(ns, (byNs.get(ns) ?? new Set()).add(p));
+        });
+
+        byNs.forEach((metas, ns) => {
+          const cols = nsColumns.get(ns) ?? new Map();
+          cols.set(kind, this.buildPlacementColumns(metas));
+          nsColumns.set(ns, cols);
+        });
+
+        return;
+      }
 
       const kindColumns = this.buildPlacementColumns(placements);
       columns.set(kind, kindColumns);
     });
 
-    const placement = this.assignCoordinates(columns);
+    const placement = this.assignCoordinates(columns, allNamespaces ? nsColumns : null);
     return placement;
   }
 
@@ -312,7 +342,10 @@ export class ServiceMapPlacementStrategy extends PlacementStrategy {
     return columns;
   }
 
-  private assignCoordinates(columns: CardsColumns): CardsPlacement {
+  private assignCoordinates(
+    columns: CardsColumns,
+    nsColumns: Map<string, CardsColumns> | null,
+  ): CardsPlacement {
     const placement: CardsPlacement = new Map();
 
     // prettier-ignore
@@ -334,7 +367,11 @@ export class ServiceMapPlacementStrategy extends PlacementStrategy {
 
     const toOutside = top.get(PlacementKind.ToWorld);
     const fromOutside = middle.get(PlacementKind.FromWorld);
-    const insideWithConns = middle.get(PlacementKind.InsideWithConnections);
+    // In "All namespaces" the namespace blocks take the place of the inside cards
+    const insideWithConns =
+      nsColumns != null
+        ? this.layoutNamespaceBlocks(nsColumns, fromOutside)
+        : middle.get(PlacementKind.InsideWithConnections);
     const insideNoConns = middle.get(PlacementKind.InsideWithoutConnections);
     const anotherNs = bottom.get(PlacementKind.AnotherNamespace);
 
@@ -424,6 +461,52 @@ export class ServiceMapPlacementStrategy extends PlacementStrategy {
     anotherNs && copyEntries(anotherNs.entries);
 
     return placement;
+  }
+
+  // Lays each namespace's cards out as a block, the blocks in a grid right of
+  // the cards from outside, with room for each block's backplate.
+  private layoutNamespaceBlocks(
+    nsColumns: Map<string, CardsColumns>,
+    fromOutside?: EntriesGroup,
+  ): EntriesGroup | undefined {
+    const gap = 3 * sizes.namespaceBackplatePadding;
+    const x0 = fromOutside ? fromOutside.bbox.x + fromOutside.bbox.w + gap : 0;
+    const perRow = Math.ceil(Math.sqrt(nsColumns.size));
+    const entries: PlacementEntry[] = [];
+
+    let x = x0;
+    let y = 0;
+    let rowHeight = 0;
+
+    Array.from(nsColumns.keys())
+      .sort()
+      .forEach((ns, i) => {
+        const aligned = this.alignColumns(nsColumns.get(ns)!, [
+          PlacementKind.InsideWithConnections,
+          PlacementKind.InsideWithoutConnections,
+        ]);
+        const block = Array.from(aligned.values()).flatMap(g => g.entries);
+        const bbox = entriesBBox(block);
+        if (bbox == null) return;
+
+        if (i > 0 && i % perRow === 0) {
+          x = x0;
+          y += rowHeight + gap;
+          rowHeight = 0;
+        }
+
+        block.forEach(e => {
+          e.geometry.x += x - bbox.x;
+          e.geometry.y += y - bbox.y;
+        });
+
+        entries.push(...block);
+        x += bbox.w + gap;
+        rowHeight = Math.max(rowHeight, bbox.h);
+      });
+
+    const bbox = entriesBBox(entries);
+    return bbox == null ? undefined : { entries, bbox };
   }
 
   private alignColumns(

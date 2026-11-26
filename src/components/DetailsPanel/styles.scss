@@ -11,7 +11,7 @@
   box-shadow: 0 0 34px rgb(0 0 0 / 16%);
 
   overflow: hidden;
-  background-color: #f6f6f6;
+  background-color: var(--hubble-ui-panel-bg);
 
   .dragPanel {
     @include exact-size(default, 29px);

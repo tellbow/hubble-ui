@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react';
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { DragPanel } from '~/components/DragPanel';
 import { FlowsTable, TickerEvents, DEFAULT_TS_UPDATE_DELAY, Column } from '~/components/FlowsTable';
@@ -13,6 +13,8 @@ import {
 } from '~/components/Misc/LoadingOverlay';
 
 import { DataMode, TransferState } from '~/domain/interactions';
+import type { Flow } from '~/domain/flows';
+import { downloadFlows } from '~/domain/flows/export';
 import { usePanelResize } from './hooks/usePanelResize';
 import type { ResizeProps } from './hooks/usePanelResize';
 
@@ -48,6 +50,20 @@ export type Props = PanelProps &
 
 export const DetailsPanel = observer(function DetailsPanel(props: Props) {
   const panelResize = usePanelResize();
+  // While paused the table keeps the flows it had; the map stays live.
+  const [pausedFlows, setPausedFlows] = useState<Flow[] | null>(null);
+  const flows = pausedFlows ?? props.flows;
+  const { filters } = props;
+  const filtersKey = [
+    props.namespace,
+    filters.since,
+    filters.httpStatus,
+    [...(filters.verdicts ?? [])].join(),
+    filters.filters?.map(String).join(),
+  ].join('|');
+
+  // New filters mean new flows: pausing must not hide them.
+  useEffect(() => setPausedFlows(null), [filtersKey]);
 
   const onStreamStop = useCallback(() => {
     props.onStreamStop?.();
@@ -58,8 +74,13 @@ export const DetailsPanel = observer(function DetailsPanel(props: Props) {
   }, [props.onPanelResize, panelResize.props]);
 
   const dataMode = props.transferState.dataMode;
-  const tableLoaded = props.flows.length > 0 && dataMode === DataMode.CiliumStreaming;
-  const loadingOverlay = getLoadingOverlayProps(props.flowsWaitTimeout, dataMode, props.namespace);
+  const tableLoaded = flows.length > 0 && dataMode === DataMode.CiliumStreaming;
+  const loadingOverlay = getLoadingOverlayProps(
+    props.flowsWaitTimeout,
+    dataMode,
+    props.namespace,
+    props.filters.isNarrowed,
+  );
 
   return (
     <div className={css.panel} ref={panelResize.ref} style={panelResize.style}>
@@ -69,13 +90,16 @@ export const DetailsPanel = observer(function DetailsPanel(props: Props) {
           onToggleFlowsTableColumn={props.onFlowsTableColumnToggle}
           onResize={panelResize.onResize}
           onStreamStop={onStreamStop}
+          isPaused={pausedFlows != null}
+          onTogglePause={() => setPausedFlows(p => (p ? null : props.flows.slice()))}
+          onExport={format => downloadFlows(flows, props.namespace, format)}
         />
       </div>
 
       <div className={css.tableWrapper}>
         {tableLoaded ? (
           <FlowsTable
-            flows={props.flows}
+            flows={flows}
             visibleColumns={props.flowsTableVisibleColumns}
             selectedFlow={props.selectedFlow}
             onSelectFlow={props.onSelectFlow}

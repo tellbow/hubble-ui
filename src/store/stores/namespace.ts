@@ -1,12 +1,13 @@
 import { makeAutoObservable } from 'mobx';
 
-import { NamespaceDescriptor } from '~/domain/namespaces';
+import { NamespaceActivity, NamespaceDescriptor } from '~/domain/namespaces';
 import { StateChange } from '~/domain/misc';
 
 export class NamespaceStore {
   // private _seenNamespaces: Map<string, boolean> = new Map();
   private _relayNamespaces: Map<string, NamespaceDescriptor> = new Map();
   private _currentNamespace: string | null = null;
+  public activity: NamespaceActivity | null = null;
 
   constructor() {
     makeAutoObservable(this, void 0, {
@@ -26,6 +27,7 @@ export class NamespaceStore {
     });
 
     s.setCurrent(this._currentNamespace);
+    s.setActivity(this.activity);
     return s;
   }
 
@@ -57,6 +59,10 @@ export class NamespaceStore {
 
   public has(ns: NamespaceDescriptor): boolean {
     return this._relayNamespaces.has(ns.namespace);
+  }
+
+  public setActivity(activity: NamespaceActivity | null) {
+    this.activity = activity;
   }
 
   public add(nsd: NamespaceDescriptor[]) {
