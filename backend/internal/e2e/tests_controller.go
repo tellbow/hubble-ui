@@ -62,6 +62,8 @@ func (tc *TestsController) applyTestSettings(ts *TestSettings) {
 		err = tc.enableTenantJobsCase(ts)
 	case PartiallyDropped:
 		err = tc.enablePartiallyDroppedCase()
+	case Demo:
+		err = tc.enableDemoCase()
 	}
 
 	if err != nil {

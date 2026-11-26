@@ -60,3 +60,6 @@ yarn-error.log*
 # VSCode
 .vscode
 
+# Playwright
+/test-results
+/playwright-report
