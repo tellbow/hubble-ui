@@ -250,7 +250,10 @@ test('the builder edits the same filters as the code mode', async ({ page }) => 
 
   await pick('Field', 'port 443');
   await pick('Side', 'destination');
-  await value.fill('99999');
+  // Click and type as a person does: picking a Side hands focus back to its
+  // button as its menu closes, and only typed keys open the value list.
+  await value.click();
+  await value.pressSequentially('99999');
   await value.press('Enter');
   await expect(page.getByText('port: "99999" is no port')).toBeVisible();
 
@@ -258,7 +261,8 @@ test('the builder edits the same filters as the code mode', async ({ page }) => 
   await page.getByRole('button', { name: 'Add filter', exact: true }).click();
   await pick('Field', 'port 443');
   await pick('Side', 'destination');
-  await value.fill('443');
+  await value.click();
+  await value.pressSequentially('443');
   await value.press('Enter');
   await expect(page).toHaveURL(/filter=to-port%3A443/);
   await expect(row(page, 'api')).toHaveCount(0);
