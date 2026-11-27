@@ -41,14 +41,30 @@ test('a filter hubble-relay rejects shows its error', async ({ page }) => {
   await open(page, 'demo');
   await expect(row(page, 'api').first()).toBeVisible();
 
-  const input = page.getByPlaceholder(/Filter by/);
-  await input.fill('ip=foo');
+  // A lookahead: JavaScript takes it, relay's Go regexp (RE2) does not.
+  const input = page.getByPlaceholder(/Filter flows/);
+  await input.fill('http-path:(?=x)');
   await input.press('Enter');
 
-  const toast = page.locator('.bp6-toast').filter({ hasText: 'invalid IP address "foo"' });
+  const toast = page
+    .locator('.bp6-toast')
+    .filter({ hasText: 'invalid or unsupported Perl syntax' });
   await expect(toast).toBeVisible();
   // The notification's icon exists (it used to point at a missing file).
   await expect(toast.locator('.bp6-icon').first()).toBeVisible();
+
+  // Asking again cannot help, so the UI does not (it used to every 7 s).
+  let opened = 0;
+  page.on('request', r => {
+    if (r.method() === 'POST' && r.url().includes('service-map-stream')) opened++;
+  });
+  await page.waitForTimeout(9000);
+  expect(opened).toBe(0);
+  await expect(page.getByText('Data streams are reconnecting')).toHaveCount(0);
+
+  // A changed filter opens a new stream.
+  await page.locator('[class*="FlowsFilterInput"] .bp6-tag-remove').click();
+  await expect(row(page, 'api').first()).toBeVisible();
 });
 
 test('the Encrypted column and row tell encrypted flows apart', async ({ page }) => {
@@ -85,7 +101,7 @@ test('a flow can be opened with the keyboard', async ({ page }) => {
   // A label in the details becomes a filter, also from the keyboard.
   await page.getByRole('button', { name: 'app=client' }).first().focus();
   await page.keyboard.press('Enter');
-  await expect(page).toHaveURL(/flows-filter=.*app(=|%3D)client/);
+  await expect(page).toHaveURL(/filter=.*app(=|%3D)client/);
 });
 
 test('the welcome screen lists namespaces by their traffic', async ({ page }) => {
@@ -122,7 +138,7 @@ test('a red arrow shows its dropped flows and why', async ({ page }) => {
 
   await expect(page).toHaveURL(/verdicts=2(&|$)/); // Verdict.Dropped
   // Only the card's identity: its world label would match every world peer.
-  await expect(page).toHaveURL(/flows-filter=to%3Aidentity%3D\d+(&|$)/);
+  await expect(page).toHaveURL(/filter=to-identity%3A\d+(&|$)/);
   await expect(row(page, 'example.com')).toHaveCount(0);
   await expect(row(page, 'cloudflare.com')).toContainText('dropped · Policy denied');
 });
@@ -172,7 +188,7 @@ test('the top bar fits a phone screen', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await open(page, 'demo');
 
-  for (const el of [page.getByPlaceholder(/Filter by/), page.getByText('Any verdict')]) {
+  for (const el of [page.getByPlaceholder(/Filter flows/), page.getByText('Any verdict')]) {
     const box = (await el.boundingBox())!;
     expect(box.x + box.width).toBeLessThanOrEqual(390);
   }
@@ -194,4 +210,107 @@ test('flows can be exported as CSV', async ({ page }) => {
     .split('\r\n');
   expect(header).toContain('destination_dns');
   expect(rows.some(r => r.includes('dropped') && r.includes('cloudflare.com'))).toBe(true);
+});
+
+test('filters combine fields with AND and say what is wrong while typing', async ({ page }) => {
+  await open(page, 'demo');
+  await expect(row(page, 'api').first()).toBeVisible();
+
+  const input = page.getByPlaceholder(/Filter flows/);
+  await input.fill('to-port:99999');
+  await expect(page.getByText('port: "99999" is no port')).toBeVisible();
+
+  // demo: client → api on 8080, client → world on 443 (example.com, cloudflare.com)
+  await input.fill('from-pod:client to-port:443');
+  await input.press('Enter');
+
+  await expect(page).toHaveURL(/filter=from-pod%3Aclient(\+|%20)to-port%3A443/);
+  await expect(row(page, 'cloudflare.com')).toBeVisible();
+  await expect(row(page, 'api')).toHaveCount(0);
+});
+
+test('the builder edits the same filters as the code mode', async ({ page }) => {
+  await open(page, 'demo');
+  await expect(row(page, 'api').first()).toBeVisible();
+
+  const pick = async (label: string, option: string) => {
+    await page.getByRole('button', { name: label, exact: true }).click();
+    await page.getByRole('option', { name: option, exact: true }).click();
+  };
+
+  await page.getByRole('radio', { name: 'Builder' }).click();
+  await page.getByRole('button', { name: /Add filters/ }).click();
+  await page.getByRole('button', { name: 'Add filter', exact: true }).click();
+
+  // Values seen on screen are offered, with how often.
+  const value = page.getByLabel('Value');
+  await value.click();
+  await expect(page.getByRole('option', { name: /^client/ })).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  await pick('Field', 'port 443');
+  await pick('Side', 'destination');
+  await value.fill('99999');
+  await value.press('Enter');
+  await expect(page.getByText('port: "99999" is no port')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Remove filter' }).click();
+  await page.getByRole('button', { name: 'Add filter', exact: true }).click();
+  await pick('Field', 'port 443');
+  await pick('Side', 'destination');
+  await value.fill('443');
+  await value.press('Enter');
+  await expect(page).toHaveURL(/filter=to-port%3A443/);
+  await expect(row(page, 'api')).toHaveCount(0);
+
+  await pick('Operator', 'is not');
+  await expect(page).toHaveURL(/filter=(!|%21)to-port%3A443/);
+  await expect(row(page, 'api').first()).toBeVisible();
+
+  // The code mode shows what the builder made.
+  await page.keyboard.press('Escape');
+  await page.getByRole('radio', { name: 'Code' }).click();
+  await expect(page.locator('[class*="FlowsFilterInput"] [class*="kind"]')).toHaveText(['port']);
+});
+
+test('the Sankey view shows who talks to what, and a click filters', async ({ page }) => {
+  await open(page, 'demo');
+  await expect(row(page, 'api').first()).toBeVisible();
+
+  await page.getByRole('radio', { name: 'Sankey' }).click();
+  const sankey = page.getByRole('img', { name: /source through port to destination/ });
+  await expect(sankey).toBeVisible();
+
+  await sankey.locator('[data-sankey-node="443/TCP"]').click();
+  await expect(page).toHaveURL(/filter=to-port%3A443/);
+  await expect(row(page, 'api')).toHaveCount(0);
+
+  // A band filters for both of its ends.
+  await sankey.locator('[data-sankey-band="client>443/TCP"]').first().click({ force: true });
+  await expect(page).toHaveURL(/filter=to-port%3A443(\+|%20)from-label%3Aapp%3Dclient/);
+
+  await page.getByRole('radio', { name: 'Map' }).click();
+  await expect(page.getByRole('img', { name: /source through port/ })).toHaveCount(0);
+});
+
+test('a value in the flow details toggles a filter for flows like it', async ({ page }) => {
+  await open(page, 'demo');
+  await row(page, 'example.com').click();
+
+  const encrypted = page.getByRole('button', { name: 'No', exact: true });
+  await encrypted.click();
+  await expect(page).toHaveURL(/filter=encrypted%3Ano/);
+  await expect(row(page, 'api')).toHaveCount(0);
+  await expect(row(page, 'example.com')).toBeVisible();
+
+  // An older kind of value adds to the filters too, and toggles off alone.
+  const label = page.getByRole('button', { name: 'app=client', exact: true }).first();
+  await label.click();
+  await expect(page).toHaveURL(/filter=encrypted%3Ano(\+|%20)from-label%3A/);
+  await label.click();
+  await expect(page).toHaveURL(/filter=encrypted%3Ano$/);
+
+  await encrypted.click();
+  await expect(page).not.toHaveURL(/filter=/);
+  await expect(row(page, 'api').first()).toBeVisible();
 });

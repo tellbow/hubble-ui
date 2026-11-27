@@ -4,12 +4,24 @@ import {
   filterLink,
   filterLinkByEntry,
   FilterEntry,
+  FilterKind,
+  FilterDirection,
 } from '~/domain/filtering';
 
 import { Verdict } from '~/domain/hubble';
 import { Link } from '~/domain/link';
 import { Dictionary } from '~/domain/misc';
 import { links } from '~/testing/data';
+
+// Links compare their service ids, which are no identity numbers: entries
+// built directly, as the input would refuse these values.
+const linkIdEntry = (direction: string, query: string, negative = false) =>
+  new FilterEntry({
+    kind: FilterKind.Identity,
+    direction: direction as FilterDirection,
+    query,
+    negative,
+  });
 
 const runUnusedFiltersTests = (filters: FiltersObject[], links: Dictionary<Link>) => {
   Object.keys(links).forEach((linkName: string) => {
@@ -215,7 +227,7 @@ describe('filterLink', () => {
 
   testFilterEntry(
     (linkName: string, n: number) => `identity > to matches ${n} (${linkName})`,
-    FilterEntry.parse(`to:identity=dst-456`)!,
+    linkIdEntry('to', `dst-456`),
     true,
     {
       tcpForwarded,
@@ -229,7 +241,7 @@ describe('filterLink', () => {
 
   testFilterEntry(
     (linkName: string, n: number) => `identity > to doesnt match ${n} (${linkName})`,
-    FilterEntry.parse(`to:identity=dst-456-wrong`)!,
+    linkIdEntry('to', `dst-456-wrong`),
     false,
     {
       tcpForwarded,
@@ -243,7 +255,7 @@ describe('filterLink', () => {
 
   testFilterEntry(
     (linkName: string, n: number) => `identity > negative > to match ${n} (${linkName})`,
-    FilterEntry.parse(`!to:identity=dst-456`)!,
+    linkIdEntry('to', `dst-456`, true),
     true,
     {
       tcpForwarded,
@@ -257,7 +269,7 @@ describe('filterLink', () => {
 
   testFilterEntry(
     (linkName: string, n: number) => `identity > negative > to doesnt match ${n} (${linkName})`,
-    FilterEntry.parse(`!to:identity=dst-456-wrong`)!,
+    linkIdEntry('to', `dst-456-wrong`, true),
     true,
     {
       tcpForwarded,
@@ -271,7 +283,7 @@ describe('filterLink', () => {
 
   testFilterEntry(
     (linkName: string, n: number) => `identity > to matches ${n} (${linkName})`,
-    FilterEntry.parse(`to:identity=src-123`)!,
+    linkIdEntry('to', `src-123`),
     true,
     {
       tcpForwardedToItself,
@@ -281,7 +293,7 @@ describe('filterLink', () => {
 
   testFilterEntry(
     (linkName: string, n: number) => `identity > to doesnt match ${n} (${linkName})`,
-    FilterEntry.parse(`to:identity=src-123-wrong`)!,
+    linkIdEntry('to', `src-123-wrong`),
     false,
     {
       tcpForwardedToItself,
@@ -291,7 +303,7 @@ describe('filterLink', () => {
 
   testFilterEntry(
     (linkName: string, n: number) => `identity > from matches ${n} (${linkName})`,
-    FilterEntry.parse(`from:identity=src-123`)!,
+    linkIdEntry('from', `src-123`),
     true,
     {
       tcpForwarded,
@@ -307,7 +319,7 @@ describe('filterLink', () => {
 
   testFilterEntry(
     (linkName: string, n: number) => `identity > from doesnt match ${n} (${linkName})`,
-    FilterEntry.parse(`from:identity=src-123-wrong`)!,
+    linkIdEntry('from', `src-123-wrong`),
     false,
     {
       tcpForwarded,
@@ -323,7 +335,7 @@ describe('filterLink', () => {
 
   testFilterEntry(
     (linkName: string, n: number) => `identity > either matches ${n} (${linkName})`,
-    FilterEntry.parse(`either:identity=src-123`)!,
+    linkIdEntry('either', `src-123`),
     true,
     {
       tcpForwarded,
@@ -339,7 +351,7 @@ describe('filterLink', () => {
 
   testFilterEntry(
     (linkName: string, n: number) => `identity > either doesnt match ${n} (${linkName})`,
-    FilterEntry.parse(`either:identity=src-123-wrong`)!,
+    linkIdEntry('either', `src-123-wrong`),
     false,
     {
       tcpForwarded,
@@ -374,36 +386,36 @@ describe('filterLink', () => {
         httpStatus: '200',
       },
       {
-        filters: [FilterEntry.parse('from:dns=www.google.com')!],
+        filters: [FilterEntry.parse('from-fqdn:www.google.com')!],
       },
       {
-        filters: [FilterEntry.parse('to:dns=www.google.com')!],
+        filters: [FilterEntry.parse('to-fqdn:www.google.com')!],
       },
       {
-        filters: [FilterEntry.parse('either:dns=www.google.com')!],
+        filters: [FilterEntry.parse('fqdn:www.google.com')!],
       },
       {
-        filters: [FilterEntry.parse('from:label=k8s:k8s-app=random-app')!],
+        filters: [FilterEntry.parse('from-label:k8s:k8s-app=random-app')!],
       },
       {
-        filters: [FilterEntry.parse('to:label=k8s:k8s-app=random-app')!],
+        filters: [FilterEntry.parse('to-label:k8s:k8s-app=random-app')!],
       },
       {
-        filters: [FilterEntry.parse('either:label=k8s:k8s-app=random-app')!],
+        filters: [FilterEntry.parse('label:k8s:k8s-app=random-app')!],
       },
       {
-        filters: [FilterEntry.parse('from:ip=153.82.167.250')!],
+        filters: [FilterEntry.parse('from-ip:153.82.167.250')!],
       },
       {
-        filters: [FilterEntry.parse('to:ip=153.82.167.250')!],
+        filters: [FilterEntry.parse('to-ip:153.82.167.250')!],
       },
       {
-        filters: [FilterEntry.parse('either:ip=153.82.167.250')!],
+        filters: [FilterEntry.parse('ip:153.82.167.250')!],
       },
       {
         filters: [
-          FilterEntry.parse('from:ip=153.82.167.250')!,
-          FilterEntry.parse('to:label=k8s:k8s-app=random-app')!,
+          FilterEntry.parse('from-ip:153.82.167.250')!,
+          FilterEntry.parse('to-label:k8s:k8s-app=random-app')!,
         ],
       },
     ],

@@ -5,9 +5,9 @@ import { Timestamp } from '~backend/proto/google/protobuf/timestamp_pb';
 import { EventParams, EventParamsSet } from '~/api/general/event-stream';
 
 import { ReservedLabel, SpecialLabel } from '~/domain/labels';
-import { Filters, FilterEntry, FilterKind, TimeRanges } from '~/domain/filtering';
+import { Filters, TimeRanges } from '~/domain/filtering';
+import { entriesToProto } from '~/domain/filtering/fields';
 import { CiliumEventTypes } from '~/domain/cilium';
-import { TCPFlagName } from '~/domain/hubble';
 import * as helpers from '~/domain/helpers';
 
 export class ProtoFactory {
@@ -62,38 +62,17 @@ export class ProtoFactory {
   public static flowFiltersFromFilters(
     filters: Filters,
   ): [flowpb.FlowFilter[], flowpb.FlowFilter[]] {
-    const wlFilters: flowpb.FlowFilter[] = [];
-    const blFilters = ProtoFactory.blacklistFlowFilters(filters);
+    const [wlFilters, blEntryFilters] = entriesToProto(
+      filters.filters ?? [],
+      filters.namespace || null,
+      () => ProtoFactory.baseWhitelistFilter(filters),
+    );
 
-    const positiveEntries = filters.filters?.filter(filter => !filter.negative);
-    if (!positiveEntries?.length) {
-      const namespace = filters?.namespace;
-
-      if (namespace) {
-        const wlSrcFilter = ProtoFactory.baseWhitelistFilter(filters);
-        const wlDstFilter = ProtoFactory.baseWhitelistFilter(filters);
-
-        wlSrcFilter.sourcePod.push(`${namespace}/`);
-        wlDstFilter.destinationPod.push(`${namespace}/`);
-
-        wlFilters.push(wlSrcFilter, wlDstFilter);
-      } else {
-        wlFilters.push(ProtoFactory.baseWhitelistFilter(filters));
-      }
-
-      return [wlFilters, blFilters];
-    }
-
-    positiveEntries.forEach(filter => {
-      wlFilters.push(...ProtoFactory.filterEntryWhitelistFilters(filters, filter));
-    });
-
-    return [wlFilters, blFilters];
+    return [wlFilters, [...ProtoFactory.blacklistFlowFilters(filters), ...blEntryFilters]];
   }
 
   public static blacklistFlowFilters(filters?: Filters): flowpb.FlowFilter[] {
     const blFilters: flowpb.FlowFilter[] = [];
-    const namespace = filters?.namespace;
 
     const blSrcLabelsFilter = flowpb.FlowFilter.create();
     const blDstLabelsFilter = flowpb.FlowFilter.create();
@@ -135,81 +114,6 @@ export class ProtoFactory {
     blDstLocalDnsFilter.destinationFqdn.push('*.cluster.local*');
     blFilters.push(blSrcLocalDnsFilter, blDstLocalDnsFilter);
 
-    const blSrcIps: string[] = [];
-    const blDstIps: string[] = [];
-    const blSrcIdentities: number[] = [];
-    const blDstIdentities: number[] = [];
-    const blSrcPods: string[] = [];
-    const blDstPods: string[] = [];
-    filters?.filters
-      ?.filter(filter => filter.negative)
-      .forEach(filter => {
-        const { kind, query } = filter;
-        switch (kind) {
-          case FilterKind.Label: {
-            filter.fromRequired && blSrcLabelsFilter.sourceLabel.push(query);
-            filter.toRequired && blDstLabelsFilter.destinationLabel.push(query);
-            break;
-          }
-          case FilterKind.Ip: {
-            filter.fromRequired && blSrcIps.push(filter.query);
-            filter.toRequired && blDstIps.push(filter.query);
-            break;
-          }
-          case FilterKind.Dns: {
-            filter.fromRequired && blSrcLocalDnsFilter.sourceFqdn.push(query);
-            filter.toRequired && blDstLocalDnsFilter.destinationFqdn.push(query);
-            break;
-          }
-          case FilterKind.Identity: {
-            filter.fromRequired && blSrcIdentities.push(+query);
-            filter.toRequired && blDstIdentities.push(+query);
-            break;
-          }
-          case FilterKind.Pod: {
-            filter.fromRequired && blSrcPods.push(query);
-            filter.toRequired && blDstPods.push(query);
-          }
-        }
-      });
-
-    if (blSrcIps.length) {
-      const blSrcIpFilter = flowpb.FlowFilter.create();
-      blSrcIps.forEach(e => blSrcIpFilter.sourceIp.push(e));
-      blFilters.push(blSrcIpFilter);
-    }
-
-    if (blDstIps.length) {
-      const blDstIpFilter = flowpb.FlowFilter.create();
-      blSrcIps.forEach(e => blDstIpFilter.destinationIp.push(e));
-      blFilters.push(blDstIpFilter);
-    }
-
-    if (blSrcIdentities.length) {
-      const blSrcIdentityFilter = flowpb.FlowFilter.create();
-      blSrcIdentities.forEach(e => blSrcIdentityFilter.sourceIdentity.push(e));
-      blFilters.push(blSrcIdentityFilter);
-    }
-
-    if (blDstIdentities.length) {
-      const blDstIdentityFilter = flowpb.FlowFilter.create();
-      blDstIdentities.forEach(e => blDstIdentityFilter.destinationIdentity.push(e));
-      blFilters.push(blDstIdentityFilter);
-    }
-
-    if (blSrcPods.length) {
-      const blSrcPodFilter = flowpb.FlowFilter.create();
-
-      blSrcPods.forEach(e => blSrcPodFilter.sourcePod.push(`${namespace}/${e}`));
-      blFilters.push(blSrcPodFilter);
-    }
-
-    if (blDstPods.length) {
-      const blDstPodFilter = flowpb.FlowFilter.create();
-      blDstPods.forEach(e => blDstPodFilter.destinationPod.push(`${namespace}/${e}`));
-      blFilters.push(blDstPodFilter);
-    }
-
     return blFilters;
   }
 
@@ -235,180 +139,6 @@ export class ProtoFactory {
 
     wlFilter.reply.push(false);
     return wlFilter;
-  }
-
-  public static filterEntryWhitelistFilters(
-    filters: Filters,
-    filter: FilterEntry,
-  ): flowpb.FlowFilter[] {
-    const { kind, query } = filter;
-    const wlFilters: flowpb.FlowFilter[] = [];
-
-    const podsInNamespace = filters.namespace ? `${filters.namespace}/` : null;
-    const pod = filter.podNamespace
-      ? `${filter.podNamespace}/${filter.query}`
-      : filters.namespace
-        ? `${filters.namespace}/${filter.query}`
-        : null;
-
-    if (filter.fromRequired) {
-      // NOTE: this makes possible to catch flows [outside of ns] -> [ns]
-      // NOTE: but flows [ns] -> [outside of ns] are lost...
-      const toInside = ProtoFactory.baseWhitelistFilter(filters);
-      podsInNamespace && toInside.destinationPod.push(podsInNamespace);
-
-      // NOTE: ...this filter fixes this last case
-      const fromInside = ProtoFactory.baseWhitelistFilter(filters);
-      podsInNamespace && fromInside.sourcePod.push(podsInNamespace);
-
-      switch (kind) {
-        case FilterKind.Label: {
-          toInside.sourceLabel.push(query);
-          fromInside.sourceLabel.push(query);
-          break;
-        }
-        case FilterKind.Ip: {
-          toInside.sourceIp.push(query);
-          fromInside.sourceIp.push(query);
-          break;
-        }
-        case FilterKind.Dns: {
-          toInside.sourceFqdn.push(query);
-          fromInside.sourceFqdn.push(query);
-          break;
-        }
-        case FilterKind.Identity: {
-          toInside.sourceIdentity.push(+query);
-          fromInside.sourceIdentity.push(+query);
-          break;
-        }
-        case FilterKind.Pod: {
-          pod && toInside.sourcePod.push(pod);
-          fromInside.sourcePod = [];
-
-          if (pod && podsInNamespace && !pod.startsWith(podsInNamespace)) {
-            fromInside.destinationPod.push(podsInNamespace);
-          }
-          pod && fromInside.sourcePod.push(pod);
-          break;
-        }
-        case FilterKind.Workload: {
-          const workload = ProtoFactory.workloadFromFilterEntry(filter);
-          if (workload == null) break;
-
-          toInside.sourceWorkload.push(workload);
-          fromInside.sourceWorkload.push(workload);
-          break;
-        }
-        case FilterKind.TCPFlag: {
-          const tcpFlags = ProtoFactory.tcpFlagsFromFilterEntry(filter);
-          if (tcpFlags == null) break;
-
-          toInside.tcpFlags.push(tcpFlags);
-          fromInside.tcpFlags.push(tcpFlags);
-          break;
-        }
-      }
-
-      wlFilters.push(toInside, fromInside);
-    }
-
-    if (filter.toRequired) {
-      // NOTE: this makes possible to catch flows [ns] -> [outside of ns]
-      // NOTE: but flows [outside of ns] -> [ns] are lost...
-      const fromInside = ProtoFactory.baseWhitelistFilter(filters);
-      podsInNamespace && fromInside.sourcePod.push(podsInNamespace);
-
-      // NOTE: ...this filter fixes this last case
-      const toInside = ProtoFactory.baseWhitelistFilter(filters);
-      podsInNamespace && toInside.destinationPod.push(podsInNamespace);
-
-      switch (kind) {
-        case FilterKind.Label: {
-          fromInside.destinationLabel.push(query);
-          toInside.destinationLabel.push(query);
-          break;
-        }
-        case FilterKind.Ip: {
-          fromInside.destinationIp.push(query);
-          toInside.destinationIp.push(query);
-          break;
-        }
-        case FilterKind.Dns: {
-          fromInside.destinationFqdn.push(query);
-          toInside.destinationFqdn.push(query);
-          break;
-        }
-        case FilterKind.Identity: {
-          fromInside.destinationIdentity.push(+query);
-          toInside.destinationIdentity.push(+query);
-          break;
-        }
-        case FilterKind.Pod: {
-          pod && fromInside.destinationPod.push(pod);
-          toInside.destinationPod = [];
-
-          if (podsInNamespace && pod && !pod.startsWith(podsInNamespace)) {
-            toInside.sourcePod.push(podsInNamespace);
-          }
-          pod && toInside.destinationPod.push(pod);
-          break;
-        }
-        case FilterKind.Workload: {
-          const workload = ProtoFactory.workloadFromFilterEntry(filter);
-          if (workload == null) break;
-
-          toInside.destinationWorkload.push(workload);
-          fromInside.destinationWorkload.push(workload);
-          break;
-        }
-        case FilterKind.TCPFlag: {
-          const tcpFlags = ProtoFactory.tcpFlagsFromFilterEntry(filter);
-          if (tcpFlags == null) break;
-
-          toInside.tcpFlags.push(tcpFlags);
-          fromInside.tcpFlags.push(tcpFlags);
-          break;
-        }
-      }
-
-      wlFilters.push(fromInside, toInside);
-    }
-
-    return wlFilters;
-  }
-
-  // NOTE: protobuf-ts mangles the uppercase proto field names (FIN, SYN, ...)
-  // NOTE: into this form, so the mapping cannot be derived from the flag name.
-  private static readonly tcpFlagProtoFields: Record<TCPFlagName, keyof flowpb.TCPFlags> = {
-    fin: 'fIN',
-    syn: 'sYN',
-    rst: 'rST',
-    psh: 'pSH',
-    ack: 'aCK',
-    urg: 'uRG',
-    ece: 'eCE',
-    cwr: 'cWR',
-    ns: 'nS',
-  };
-
-  public static tcpFlagsFromFilterEntry(fe: FilterEntry): flowpb.TCPFlags | null {
-    if (!fe.isTCPFlag || !fe.query) return null;
-
-    const flag = fe.query.toLowerCase() as TCPFlagName;
-    const field = ProtoFactory.tcpFlagProtoFields[flag];
-    if (field == null) return null;
-
-    const tcpFlags = flowpb.TCPFlags.create();
-    tcpFlags[field] = true;
-
-    return tcpFlags;
-  }
-
-  public static workloadFromFilterEntry(fe: FilterEntry): flowpb.Workload | null {
-    if (!fe.isWorkload || !fe.query || !fe.meta) return null;
-
-    return fe.asWorkload() || null;
   }
 
   public static eventFilterFromFlowFilter(ff: flowpb.FlowFilter): uipb.EventFilter {

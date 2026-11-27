@@ -1,12 +1,17 @@
 package apiserver
 
 import (
+	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 	"time"
 
 	pb_flow "github.com/cilium/cilium/api/v1/flow"
+	"github.com/cilium/cilium/pkg/hubble/filters"
 	"github.com/cilium/hubble-ui/backend/proto/ui"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/cilium/hubble-ui/backend/domain/cache"
 	"github.com/cilium/hubble-ui/backend/domain/flow"
@@ -44,6 +49,14 @@ func (srv *APIServer) ServiceMapStream(
 	if len(req.GetEventTypes()) == 0 {
 		log.Info("Requested events are empty, terminating...")
 		return ch.TerminateStatus(http.StatusBadRequest)
+	}
+
+	// hubble-relay only logs a filter its nodes reject and ends the stream as
+	// if no flows were left, so the UI would reconnect forever without saying
+	// why. Cilium's own check, run here first, gives the error.
+	if err := checkFilters(ctx, log, req); err != nil {
+		log.Warn("rejecting invalid flow filters", "error", err)
+		return err
 	}
 
 	relayClient := srv.clients.RelayClient()
@@ -160,5 +173,16 @@ F:
 	}
 
 	log.Info("stream is closed")
+	return nil
+}
+
+func checkFilters(ctx context.Context, log *slog.Logger, req *ui.GetEventsRequest) error {
+	fr := flow_stream.ExtractFlowsRequest(req)
+	for _, ff := range [][]*pb_flow.FlowFilter{fr.GetWhitelist(), fr.GetBlacklist()} {
+		if _, err := filters.BuildFilterList(ctx, ff, filters.DefaultFilters(log)); err != nil {
+			return status.Error(codes.InvalidArgument, err.Error())
+		}
+	}
+
 	return nil
 }

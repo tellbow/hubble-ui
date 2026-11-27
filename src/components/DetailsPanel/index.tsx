@@ -45,6 +45,7 @@ export type Props = PanelProps &
     onSidebarIdentityClick: SidebarProps['onIdentityClick'];
     onSidebarIpClick: SidebarProps['onIpClick'];
     onSidebarDnsClick: SidebarProps['onDnsClick'];
+    onSidebarFilterClick: SidebarProps['onFilterClick'];
     filters: SidebarProps['filters'];
   };
 
@@ -126,6 +127,7 @@ export const DetailsPanel = observer(function DetailsPanel(props: Props) {
           onIdentityClick={props.onSidebarIdentityClick}
           onIpClick={props.onSidebarIpClick}
           onDnsClick={props.onSidebarDnsClick}
+          onFilterClick={props.onSidebarFilterClick}
         />
       )}
     </div>

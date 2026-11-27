@@ -8,7 +8,7 @@ describe('parsing search params', () => {
   });
 
   test('flow filters 1', () => {
-    store.setParam(RouteParam.FlowsFilter, 'from:identity=21034,to:identity=48617');
+    store.setParam(RouteParam.FlowsFilter, 'from-identity:21034 to-identity:48617');
 
     expect(store.flowFilters.length).toBe(2);
 
@@ -29,7 +29,7 @@ describe('parsing search params', () => {
   });
 
   test('flow filters 3', () => {
-    store.setParam(RouteParam.FlowsFilter, 'from:identity=21034');
+    store.setParam(RouteParam.FlowsFilter, 'from-identity:21034');
 
     expect(store.flowFilters.length).toBe(1);
 

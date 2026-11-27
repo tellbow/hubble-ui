@@ -2,7 +2,8 @@ import React from 'react';
 import { observer } from 'mobx-react';
 
 import { Verdict } from '~/domain/hubble';
-import { FilterEntry } from '~/domain/filtering';
+import { FilterEntry, FilterKind } from '~/domain/filtering';
+import type { Suggestion } from '~/domain/filtering/fields';
 import { Status } from '~/domain/status';
 import { TransferState } from '~/domain/interactions';
 import { NamespaceActivity, NamespaceDescriptor } from '~/domain/namespaces';
@@ -31,6 +32,7 @@ export interface Props {
   onHttpStatusChange?: (httpStatus: string | null) => void;
   flowFilters: FilterEntry[];
   onChangeFlowFilters?: (filters: FilterEntry[]) => void;
+  flowFilterSuggestions?: () => Map<FilterKind, Suggestion[]>;
   showHost: boolean;
   onShowHostToggle?: () => void;
   showKubeDns: boolean;
@@ -46,7 +48,11 @@ export const TopBar = observer(function TopBar(props: Props) {
     <>
       <div className={css.spacer} />
       <div className={css.spacer} />
-      <FlowsFilterInput filters={props.flowFilters} onChange={props.onChangeFlowFilters} />
+      <FlowsFilterInput
+        filters={props.flowFilters}
+        onChange={props.onChangeFlowFilters}
+        suggestions={props.flowFilterSuggestions}
+      />
       <div className={css.spacer} />
       <VerdictFilterDropdown verdict={props.selectedVerdict} onSelect={props.onVerdictChange} />
       <div className={css.border} />

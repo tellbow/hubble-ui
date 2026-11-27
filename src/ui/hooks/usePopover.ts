@@ -52,8 +52,8 @@ export function usePopover({
   useEffect(() => {
     const listener = (event: MouseEvent) => {
       if (!event.target || !popoverDiv) return;
-      const target = event.target as Element;
-      if (popoverDiv.contains(target)) return;
+      // The path, not the target: React may have removed the clicked element.
+      if (event.composedPath().includes(popoverDiv)) return;
       onClose();
     };
     document.addEventListener('click', listener);

@@ -209,7 +209,7 @@ export class Router extends EventEmitter<Handlers> {
     });
 
     this.dataLayer.controls.onFlowFiltersChanged(diff => {
-      const str = diff.after?.map(f => f.toString()).join(',') || null;
+      const str = diff.after?.map(f => f.toString()).join(' ') || null;
       this.updateRouteParam(RouteParam.FlowsFilter, str);
     });
   }

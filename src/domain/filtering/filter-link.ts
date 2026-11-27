@@ -19,13 +19,13 @@ export const filterLink = (link: Link, filters: Filters): boolean => {
 
   if (!filters.filters?.length) return true;
 
-  for (const ff of filters.filters) {
-    const ffResult = filterLinkByEntry(link, ff);
+  // Every `!` entry must let the link through, and one other entry if any:
+  // a link knows only its two ends, not the fields of its flows.
+  const entries = filters.filters;
+  if (entries.some(e => e.negative && !filterLinkByEntry(link, e))) return false;
 
-    if (ff.negative && !ffResult) return false;
-    if (!ff.negative && ffResult) return true;
-  }
-  return false;
+  const positive = entries.filter(e => !e.negative);
+  return positive.length === 0 || positive.some(e => filterLinkByEntry(link, e));
 };
 
 export const filterLinkByEntry = (l: Link, e: FilterEntry): boolean => {

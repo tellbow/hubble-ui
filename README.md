@@ -37,6 +37,39 @@ Cilium 1.16 added. A relay from Cilium 1.15 or older ignores the mask and sends
 whole flows: the counts stay right, but each answer is far larger (about 1–2 KB
 per flow instead of under 100 bytes).
 
+### Filtering flows
+
+The filter input takes the flags of `hubble observe`, written `field:value`
+and separated by spaces:
+
+```
+from-pod:frontend to-port:443,8443 !to-fqdn:*.example.com http-method:POST
+```
+
+- `from-` / `to-` pick the source or destination; without one, either matches.
+- Different fields must all match (AND); comma-separated values of one field
+  are alternatives (OR); `!` leaves out what matches.
+- Fields: `label`, `pod` (`namespace/name`), `workload` (`Kind:name`),
+  `identity`, `ip` (address or CIDR), `fqdn` (`*` wildcards), `port`,
+  `protocol`, `http-method`, `http-path` (regular expression), `node-name`,
+  `tcp-flags`, `encrypted` (`yes`/`no`), `traffic-direction`
+  (`ingress`/`egress`), `event-type` (`to-proxy`, `to-endpoint`, …),
+  `drop-reason` (`policy-denied`, …).
+
+The filters are kept in the URL (`?filter=…`), so a link shows the same view.
+**Builder** mode edits the same filters as rows of field, operator and values,
+suggesting the values seen on screen. In the flow details, a value such as
+Encrypted, Traffic direction or Destination port toggles a filter for it.
+
+Hubble leaves the pod name out of some flows (packets delivered after the L7
+proxy), so a `pod:` filter misses them; `label:app=…` catches them.
+
+### Sankey view
+
+Next to the service map, **Sankey** shows the requests as bands from source
+through port to destination, as wide as their flow count and coloured by
+verdict. Click a name to filter for it, Alt-click to filter it out.
+
 ## 🌐 Why Hubble UI?
 
 Troubleshooting microservices application connectivity is a challenging task. Simply looking at `kubectl get pods` does not indicate dependencies between each service, external APIs, or databases.

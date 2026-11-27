@@ -16,4 +16,11 @@
 
     flex-grow: 1;
   }
+
+  .viewSwitch {
+    position: absolute;
+    top: calc(var(--top-bar-height) + 12px);
+    left: 16px;
+    z-index: 2;
+  }
 }

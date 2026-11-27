@@ -69,13 +69,20 @@ func (hcl *HubbleClient) RecentFlows(ctx context.Context, n uint64) ([]*flow.Flo
 	go src.Run(ctx)
 
 	// shortcut: mocked sources never say they are exhausted, so a quiet 300 ms
-	// ends the read; a mock replaying flows slower than that would be cut short.
+	// after the first flow ends the read; a mock replaying flows slower than
+	// that would be cut short. The first flow gets longer: a busy machine
+	// (parallel e2e tests) can take more than 300 ms to start the replay.
 	flows := []*flow.Flow{}
 	for uint64(len(flows)) < n {
+		quiet := 300 * time.Millisecond
+		if len(flows) == 0 {
+			quiet = 5 * time.Second
+		}
+
 		select {
 		case f := <-src.Flows():
 			flows = append(flows, f)
-		case <-time.After(300 * time.Millisecond):
+		case <-time.After(quiet):
 			return flows, nil
 		case <-ctx.Done():
 			return flows, nil

@@ -1,11 +1,12 @@
-import { Button, Classes, MenuItem } from '@blueprintjs/core';
+import { Button, Classes, MenuItem, SegmentedControl } from '@blueprintjs/core';
 import { ItemRenderer, MultiSelect } from '@blueprintjs/select';
-import { trim } from 'lodash';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 
+import { FilterBuilder } from './FilterBuilder';
 import { TagDirection } from './TagDirection';
 
 import { FilterEntry, FilterKind } from '~/domain/filtering';
+import { fields, Suggestion } from '~/domain/filtering/fields';
 import { Labels } from '~/domain/labels';
 
 import css from './FlowsFilterInput.scss';
@@ -13,10 +14,64 @@ import css from './FlowsFilterInput.scss';
 interface Props {
   filters: FilterEntry[];
   onChange?: (filters: FilterEntry[]) => void;
+  suggestions?: () => Map<FilterKind, Suggestion[]>;
 }
 
+type Mode = 'builder' | 'code';
+const modeKey = 'hubble-ui-filter-mode';
+
+const savedMode = (): Mode => {
+  try {
+    return localStorage.getItem(modeKey) === 'builder' ? 'builder' : 'code';
+  } catch {
+    return 'code';
+  }
+};
+
+// Like Grafana's query editors: a builder of field, operator and value, and
+// the query as text. Both edit the same filters.
 export const FlowsFilterInput = (props: Props) => {
+  const [mode, setMode] = useState<Mode>(savedMode);
+
+  const onModeChange = (m: string) => {
+    setMode(m as Mode);
+    try {
+      localStorage.setItem(modeKey, m);
+    } catch {
+      // the mode is only a convenience
+    }
+  };
+
+  return (
+    <div className={css.container}>
+      <SegmentedControl
+        small
+        className={css.mode}
+        value={mode}
+        onValueChange={onModeChange}
+        options={[
+          { label: 'Builder', value: 'builder' },
+          { label: 'Code', value: 'code' },
+        ]}
+      />
+      {mode === 'builder' ? (
+        <FilterBuilder
+          filters={props.filters}
+          onChange={props.onChange}
+          suggestions={props.suggestions}
+          tags={<span className={css.builderTags}>{props.filters.map(tagRenderer)}</span>}
+        />
+      ) : (
+        <FilterCode filters={props.filters} onChange={props.onChange} />
+      )}
+    </div>
+  );
+};
+
+const FilterCode = (props: Props) => {
   const [userInput, setUserInput] = useState<string>('');
+  // MultiSelect selects created items one by one: gather them into one change.
+  const added = useRef<FilterEntry[] | null>(null);
 
   const onClear = useCallback(() => {
     props.onChange?.([]);
@@ -24,37 +79,45 @@ export const FlowsFilterInput = (props: Props) => {
 
   const createNewItemRenderer = useCallback(
     (query: string, active: boolean, handleClick: React.MouseEventHandler<HTMLElement>) => {
-      if (props.filters.some(({ query: text }) => text === query)) {
-        return undefined;
+      const { entries, error } = FilterEntry.parseInput(query);
+      if (error != null) {
+        return <MenuItem disabled multiline intent="danger" icon="error" text={error} />;
       }
 
       return (
-        <MenuItem onClick={handleClick} active={active} text={`Search "${query}"`} icon="search" />
+        <MenuItem
+          onClick={handleClick}
+          active={active}
+          icon="add"
+          text={entries.map(e => e.toString()).join('  ')}
+          label="Enter"
+        />
       );
     },
-    [props.filters],
+    [],
   );
 
-  const createNewItemFromQuery = (userInput: string) => {
-    const filter = FilterEntry.parse(userInput);
-    if (filter?.isLabel) {
-      filter.prepareLabel();
-    }
-
-    return filter;
+  const createNewItemFromQuery = (query: string) => {
+    const { entries, error } = FilterEntry.parseInput(query);
+    return error == null ? entries : (undefined as unknown as FilterEntry[]);
   };
-
-  const onQueryChange = useCallback((query: string) => {
-    setUserInput(query.replace(/\s/g, ''));
-  }, []);
 
   // prettier-ignore
   const onItemSelect = useCallback((item: FilterEntry | null) => {
-    if (!item || trim(item.query).length === 0) return;
+    if (!item) return;
 
-    props.onChange?.([...props.filters, item]);
+    if (added.current == null) {
+      added.current = [];
+      queueMicrotask(() => {
+        const [all] = FilterEntry.combine(props.filters, added.current);
+        added.current = null;
+        props.onChange?.(all);
+      });
+    }
+
+    added.current.push(item);
     setUserInput('');
-  }, [props.filters, props.onChange, userInput]);
+  }, [props.filters, props.onChange]);
 
   // prettier-ignore
   const handleTagDelete = useCallback((val: React.ReactNode, idx: number) => {
@@ -70,10 +133,10 @@ export const FlowsFilterInput = (props: Props) => {
   return (
     <MultiSelect
       initialContent={null}
-      className={css.container}
+      className={css.code}
       query={userInput}
       selectedItems={props.filters}
-      onQueryChange={onQueryChange}
+      onQueryChange={setUserInput}
       onItemSelect={onItemSelect}
       createNewItemFromQuery={createNewItemFromQuery}
       createNewItemRenderer={createNewItemRenderer}
@@ -87,14 +150,16 @@ export const FlowsFilterInput = (props: Props) => {
         openOnTargetFocus: false,
       }}
       resetOnSelect={true}
+      openOnKeyDown={true}
       noResults={<MenuItem disabled={true} text="No results." />}
       tagInputProps={{
         onRemove: handleTagDelete,
         tagProps: { minimal: true },
         rightElement: rightElement,
         className: Classes.INPUT,
-        placeholder:
-          'Filter by: label key=val, ip=1.1.1.1, dns=google.com, identity=42, pod=frontend',
+        // Spaces belong to the query: they separate filters.
+        separator: false,
+        placeholder: 'Filter flows, e.g. pod:frontend to-port:443 !label:app=db',
       }}
     />
   );
@@ -104,20 +169,20 @@ const itemRenderer: ItemRenderer<FilterEntry | null> = () => {
   return null;
 };
 
-function tagRenderer(item: FilterEntry | null) {
+export function tagRenderer(item: FilterEntry | null) {
   if (!item) return null;
 
   const query = item.kind === FilterKind.Label ? Labels.normalizeKey(item.query) : item.query;
 
   return (
-    <div className={css.tag}>
-      <TagDirection direction={item.direction} />
+    <div className={css.tag} key={item.toString()}>
+      {fields[item.kind].directional && <TagDirection direction={item.direction} />}
       <span className={css.body}>
         {item.negative && <span className={css.negative}>!</span>}
         <span className={css.kind}>{item.kind}</span>
-        <span className={css.separator}>=</span>
+        <span className={css.separator}>:</span>
         <span className={css.query}>{query}</span>
-        {item.meta && <span className={css.meta}>{item.meta}</span>}
+        {item.meta && <span className={css.meta}>{item.isPod ? `${item.meta}/` : item.meta}</span>}
       </span>
     </div>
   );

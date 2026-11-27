@@ -32,6 +32,10 @@ export class CustomError extends Error {
     return this.isGRPC && this.code === GRPCStatusCode.PermissionDenied;
   }
 
+  public get isInvalidArgument() {
+    return this.isGRPC && this.code === GRPCStatusCode.InvalidArgument;
+  }
+
   public get isRbacNoRoles() {
     return this.isPermissionDenied && this.message === 'no roles';
   }

@@ -1,23 +1,11 @@
 import _ from 'lodash';
 
-import { Labels } from '~/domain/labels';
 import { PodSelector, Workload } from '~/domain/hubble';
 
-export enum Kind {
-  Label = 'label',
-  Ip = 'ip',
-  Dns = 'dns',
-  Identity = 'identity',
-  Workload = 'workload',
-  TCPFlag = 'tcp-flag',
-  Pod = 'pod',
-}
+import { fields } from './fields';
+import { Direction, Kind } from './kinds';
 
-export enum Direction {
-  From = 'from',
-  To = 'to',
-  Either = 'either',
-}
+export { Direction, Kind };
 
 export interface Params {
   kind: Kind;
@@ -35,31 +23,87 @@ export class FilterEntry {
   public meta?: string;
   public negative: boolean;
 
-  public static parseMany(src: any, sep = ','): FilterEntry[] {
+  // Entries in the URL or the filter input: tokens apart by spaces.
+  public static parseMany(src: any): FilterEntry[] {
     if (!src || !_.isString(src)) return [];
 
-    return src.split(sep).reduce((acc, part) => {
-      part = part.trim();
-      if (!part) return acc;
-
-      const entry = FilterEntry.parse(part);
-      if (!entry) return acc;
-
-      acc.push(entry);
-      return acc;
-    }, [] as FilterEntry[]);
+    return FilterEntry.parseInput(src).entries;
   }
 
-  public static parse(userInput: string): FilterEntry | null {
-    if (userInput.length === 0) return null;
+  // `[!][from-|to-]field:value[,value…]`, the flags of `hubble observe`:
+  // `from-pod:x` is `--from-pod x`. A bare `key=value` is a label.
+  public static parseInput(input: string): { entries: FilterEntry[]; error: string | null } {
+    const entries: FilterEntry[] = [];
+    let error: string | null = null;
 
-    const parts = FilterEntry.parseParts(userInput);
-    if (parts == null) return null;
+    input
+      .split(/\s+/)
+      .filter(Boolean)
+      .forEach(token => {
+        const parsed = FilterEntry.parseToken(token);
+        if (typeof parsed === 'string') error ??= parsed;
+        else entries.push(...parsed);
+      });
 
-    const [direction, kind, rest, negative] = parts;
-    const [query, meta] = FilterEntry.parseRest(kind, rest);
+    return { entries, error };
+  }
 
-    return new FilterEntry({ kind, direction, query, meta, negative });
+  public static parse(token: string): FilterEntry | null {
+    const parsed = FilterEntry.parseToken(token.trim());
+    return typeof parsed === 'string' ? null : (parsed[0] ?? null);
+  }
+
+  // The entries of one token, or why it is not one.
+  private static parseToken(token: string): FilterEntry[] | string {
+    const negative = token.startsWith('!');
+    const body = negative ? token.slice(1) : token;
+
+    const colon = body.indexOf(':');
+    let key = colon === -1 ? '' : body.slice(0, colon);
+    let value = colon === -1 ? body : body.slice(colon + 1);
+
+    let direction = Direction.Either;
+    if (key.startsWith('from-')) [direction, key] = [Direction.From, key.slice(5)];
+    else if (key.startsWith('to-')) [direction, key] = [Direction.To, key.slice(3)];
+
+    let kind = FilterEntry.parseKind(key);
+
+    // `ip=1.1.1.1`, `dns=x`: how the old input was typed.
+    const eq = body.indexOf('=');
+    const oldKind =
+      eq === -1 ? null : FilterEntry.parseKind(body.slice(0, eq).replace(/^dns$/, 'fqdn'));
+    if (kind == null && oldKind != null) [kind, value] = [oldKind, body.slice(eq + 1)];
+
+    if (kind == null) {
+      // `app=api` or `k8s:app=api`: a label, as the old input took them.
+      if (!body.includes('=')) {
+        const known = Object.values(fields)
+          .map(f => f.example)
+          .join(', ');
+        return colon === -1
+          ? `"${token}": use field:value, e.g. ${known}`
+          : `Unknown field "${key}". Fields: ${Object.values(Kind).join(', ')}`;
+      }
+      [kind, direction, value] = [Kind.Label, Direction.Either, body];
+    }
+
+    const spec = fields[kind];
+    if (!spec.directional && direction !== Direction.Either) {
+      return `${kind} has no from- or to- side`;
+    }
+
+    const values = (spec.multi ? value.split(',') : [value]).filter(Boolean);
+    if (values.length === 0) return `${kind}: value missing, e.g. ${spec.example}`;
+
+    for (const v of values) {
+      const err = spec.validate?.(v);
+      if (err) return `${kind}: ${err}`;
+    }
+
+    return values.map(v => {
+      const [query, meta] = FilterEntry.parseRest(kind, v);
+      return new FilterEntry({ kind, direction, query, meta, negative });
+    });
   }
 
   public static parseDirection(s: string): Direction | null {
@@ -182,39 +226,6 @@ export class FilterEntry {
     });
   }
 
-  private static parseParts(userInput: string): [Direction, Kind, string, boolean] | null {
-    // NOTE: This helper method simplifies the original parsing of raw userInput
-    const negative: boolean = userInput[0] === '!';
-    if (negative) userInput = userInput.substring(1);
-
-    let firstColonIdx = userInput.indexOf(':');
-    let direction = Direction.Either;
-    if (firstColonIdx !== -1) {
-      const dirPart = userInput.slice(0, firstColonIdx);
-      const parsed = FilterEntry.parseDirection(dirPart);
-
-      // NOTE: If dirPart is not a correct direction, firstColonIdx points to wrong position for
-      // lates actions. To understand it, consider parsing this string: `workload=dep:app-dep`
-      if (parsed != null) {
-        direction = parsed;
-      } else {
-        firstColonIdx = -1;
-      }
-    }
-
-    const firstEqualIdx = userInput.indexOf('=');
-    if (firstEqualIdx === -1) {
-      return [direction, Kind.Label, userInput.slice(firstColonIdx + 1), negative];
-    }
-
-    const kindPart = userInput.slice(firstColonIdx + 1, firstEqualIdx);
-    const kind = FilterEntry.parseKind(kindPart);
-
-    return kind == null
-      ? [direction, Kind.Label, userInput.slice(firstColonIdx + 1), negative]
-      : [direction, kind, userInput.slice(firstEqualIdx + 1), negative];
-  }
-
   private static parseWorkloadQueryAndMeta(value: string): [string, string | undefined] {
     let sep = ':';
     let parts = value.split(sep);
@@ -237,6 +248,10 @@ export class FilterEntry {
     switch (kind) {
       case Kind.Workload:
         return FilterEntry.parseWorkloadQueryAndMeta(rest);
+      case Kind.Pod: {
+        const slash = rest.indexOf('/');
+        return slash === -1 ? [rest, void 0] : [rest.slice(slash + 1), rest.slice(0, slash)];
+      }
       default:
         return [rest, void 0];
     }
@@ -248,10 +263,6 @@ export class FilterEntry {
     this.direction = direction;
     this.meta = meta;
     this.negative = negative || false;
-  }
-
-  public prepareLabel() {
-    this.ensureLabelPrefix();
   }
 
   public setMeta(meta: string): FilterEntry {
@@ -281,15 +292,20 @@ export class FilterEntry {
   }
 
   public toString(): string {
-    return this.isWorkload
-      ? `${this.negative ? '!' : ''}${this.direction}:${this.kind}=${this.meta}:${this.query}`
-      : `${this.negative ? '!' : ''}${this.direction}:${this.kind}=${this.query}`;
+    const dir = this.direction === Direction.Either ? '' : `${this.direction}-`;
+    return `${this.negative ? '!' : ''}${dir}${this.kind}:${this.value}`;
   }
 
-  public asWorkload(): Workload | undefined | null {
-    if (!this.meta || !this.query) return null;
+  // The value as typed: a pod or workload with its namespace or kind.
+  public get value(): string {
+    if (this.isWorkload && this.meta) return `${this.meta}:${this.query}`;
+    if (this.isPod && this.meta) return `${this.meta}/${this.query}`;
+    return this.query;
+  }
 
-    return { kind: this.meta, name: this.query };
+  // An empty kind or name matches any, as in Cilium's workload filter.
+  public asWorkload(): Workload {
+    return { kind: this.meta ?? '', name: this.query };
   }
 
   public clone(): FilterEntry {
@@ -379,10 +395,5 @@ export class FilterEntry {
 
   public get podNamespace(): string | null {
     return this.hasMeta ? this.meta! : null;
-  }
-
-  private ensureLabelPrefix() {
-    if (!this.isLabel) return;
-    this.query = Labels.ensureK8sPrefix(this.query);
   }
 }

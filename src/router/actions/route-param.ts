@@ -6,7 +6,7 @@ import { Verdict } from '~/domain/hubble';
 export enum RouteParam {
   Namespace = 'namespace',
   Verdicts = 'verdicts',
-  FlowsFilter = 'flows-filter',
+  FlowsFilter = 'filter',
   HttpStatus = 'http-status',
   Since = 'since',
 }

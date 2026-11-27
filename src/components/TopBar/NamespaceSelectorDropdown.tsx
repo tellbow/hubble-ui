@@ -1,4 +1,4 @@
-import React, { useCallback, memo } from 'react';
+import React, { useCallback, memo, useMemo, useRef } from 'react';
 import { ItemRenderer, ItemPredicate, Select } from '@blueprintjs/select';
 import { Button, MenuItem } from '@blueprintjs/core';
 
@@ -85,7 +85,13 @@ export const NamespaceSelectorDropdown = memo<Props>(function NamespaceSelectorD
         ? 'All namespaces'
         : currentNamespace.namespace;
 
-  const items = [ALL_NAMESPACES, ...(namespaces || [])];
+  // The list as it was when the dropdown opened: a new list makes Blueprint
+  // reset the active item and scroll to the top, and namespaces come and go
+  // all the time in a busy cluster.
+  const live = useMemo(() => [ALL_NAMESPACES, ...(namespaces || [])], [namespaces]);
+  const shown = useRef(live);
+  if (!popover.isOpen) shown.current = live;
+  const items = shown.current;
 
   return (
     <Select<NamespaceDescriptor>

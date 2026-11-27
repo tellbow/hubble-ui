@@ -399,7 +399,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `labels > from matches ${tnum} (${flowName})`,
-    FilterEntry.parse(`from:label=namespace=SenderNs`)!,
+    FilterEntry.parse(`from-label:namespace=SenderNs`)!,
     true,
     {
       diffNsFlow,
@@ -418,7 +418,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `labels > from doesn't match ${tnum} (${flowName})`,
-    FilterEntry.parse(`from:label=namespace=SenderNs`)!,
+    FilterEntry.parse(`from-label:namespace=SenderNs`)!,
     false,
     {
       sameNsFlow,
@@ -431,7 +431,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `labels > to matches ${tnum} (${flowName})`,
-    FilterEntry.parse(`to:label=namespace=ReceiverNs`)!,
+    FilterEntry.parse(`to-label:namespace=ReceiverNs`)!,
     true,
     {
       diffNsFlow,
@@ -449,7 +449,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `labels > to doesn't match ${tnum} (${flowName})`,
-    FilterEntry.parse(`to:label=namespace=SenderNs`)!,
+    FilterEntry.parse(`to-label:namespace=SenderNs`)!,
     false,
     {
       sameNsFlow,
@@ -463,7 +463,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `labels > either matches ${tnum} (${flowName})`,
-    FilterEntry.parse(`either:label=namespace=SenderNs`)!,
+    FilterEntry.parse(`label:namespace=SenderNs`)!,
     true,
     {
       diffNsFlow,
@@ -481,7 +481,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `labels > either doesn't match ${tnum} (${flowName})`,
-    FilterEntry.parse(`either:label=namespace=random-123987-ns`)!,
+    FilterEntry.parse(`label:namespace=random-123987-ns`)!,
     false,
     {
       diffNsFlow,
@@ -504,7 +504,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `dns > from matches ${tnum} (${flowName})`,
-    FilterEntry.parse(`from:dns=www.google.com`)!,
+    FilterEntry.parse(`from-fqdn:www.google.com`)!,
     true,
     {
       fromGoogleFlow,
@@ -514,7 +514,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `dns > from doesn't match ${tnum} (${flowName})`,
-    FilterEntry.parse(`from:dns=www.google.com`)!,
+    FilterEntry.parse(`from-fqdn:www.google.com`)!,
     false,
     {
       diffNsFlow,
@@ -535,7 +535,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `dns > to matches ${tnum} (${flowName})`,
-    FilterEntry.parse(`to:dns=www.google.com`)!,
+    FilterEntry.parse(`to-fqdn:www.google.com`)!,
     true,
     {
       toGoogleFlow,
@@ -545,7 +545,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `dns > to doesn't match ${tnum} (${flowName})`,
-    FilterEntry.parse(`to:dns=www.google.com`)!,
+    FilterEntry.parse(`to-fqdn:www.google.com`)!,
     false,
     {
       diffNsFlow,
@@ -566,7 +566,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `dns > either matches ${tnum} (${flowName})`,
-    FilterEntry.parse(`either:dns=www.google.com`)!,
+    FilterEntry.parse(`fqdn:www.google.com`)!,
     true,
     {
       toGoogleFlow,
@@ -577,7 +577,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `dns > either doesn't match ${tnum} (${flowName})`,
-    FilterEntry.parse(`either:dns=www.google.com`)!,
+    FilterEntry.parse(`fqdn:www.google.com`)!,
     false,
     {
       diffNsFlow,
@@ -597,7 +597,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `ip > from matches ${tnum} (${flowName})`,
-    FilterEntry.parse(`from:ip=${sameIpsFlow.sourceIp}`)!,
+    FilterEntry.parse(`from-ip:${sameIpsFlow.sourceIp}`)!,
     true,
     {
       sameIpsFlow,
@@ -607,7 +607,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `ip > from doesn't match ${tnum} (${flowName})`,
-    FilterEntry.parse(`from:ip=0.0.0.0`)!,
+    FilterEntry.parse(`from-ip:0.0.0.0`)!,
     false,
     {
       sameIpsFlow,
@@ -630,7 +630,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `ip > to matches ${tnum} (${flowName})`,
-    FilterEntry.parse(`to:ip=${differentIpsFlow.destinationIp}`)!,
+    FilterEntry.parse(`to-ip:${differentIpsFlow.destinationIp}`)!,
     true,
     {
       differentIpsFlow,
@@ -639,7 +639,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `ip > to doesn't match ${tnum} (${flowName})`,
-    FilterEntry.parse(`to:ip=${differentIpsFlow.destinationIp}`)!,
+    FilterEntry.parse(`to-ip:${differentIpsFlow.destinationIp}`)!,
     false,
     {
       sameIpsFlow,
@@ -661,7 +661,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `ip > either matches ${tnum} (${flowName})`,
-    FilterEntry.parse(`either:ip=${differentIpsFlow.sourceIp}`)!,
+    FilterEntry.parse(`ip:${differentIpsFlow.sourceIp}`)!,
     true,
     {
       differentIpsFlow,
@@ -671,7 +671,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `ip > either doesn't match ${tnum} (${flowName})`,
-    FilterEntry.parse(`either:ip=0.0.0.0`)!,
+    FilterEntry.parse(`ip:0.0.0.0`)!,
     false,
     {
       sameIpsFlow,
@@ -694,7 +694,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `identity > from matches ${tnum} (${flowName})`,
-    FilterEntry.parse(`from:identity=0`)!,
+    FilterEntry.parse(`from-identity:0`)!,
     true,
     {
       normalOne: flows.normalOne,
@@ -718,7 +718,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `identity > from doesn't match ${tnum} (${flowName})`,
-    FilterEntry.parse(`from:identity=1`)!,
+    FilterEntry.parse(`from-identity:1`)!,
     false,
     {
       normalOne: flows.normalOne,
@@ -742,7 +742,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `identity > to matches ${tnum} (${flowName})`,
-    FilterEntry.parse(`to:identity=1`)!,
+    FilterEntry.parse(`to-identity:1`)!,
     true,
     {
       normalOne: flows.normalOne,
@@ -766,7 +766,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `identity > to doesn't match ${tnum} (${flowName})`,
-    FilterEntry.parse(`to:identity=0`)!,
+    FilterEntry.parse(`to-identity:0`)!,
     false,
     {
       normalOne: flows.normalOne,
@@ -790,7 +790,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `identity > either matches ${tnum} (${flowName})`,
-    FilterEntry.parse(`either:identity=0`)!,
+    FilterEntry.parse(`identity:0`)!,
     true,
     {
       normalOne: flows.normalOne,
@@ -814,7 +814,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `identity > either matches ${tnum} (${flowName})`,
-    FilterEntry.parse(`either:identity=1`)!,
+    FilterEntry.parse(`identity:1`)!,
     true,
     {
       normalOne: flows.normalOne,
@@ -838,7 +838,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `identity > either doesn't match ${tnum} (${flowName})`,
-    FilterEntry.parse(`either:identity=100500`)!,
+    FilterEntry.parse(`identity:100500`)!,
     false,
     {
       normalOne: flows.normalOne,
@@ -864,7 +864,7 @@ describe('filterFlow', () => {
     (flowName: string, tnum: number) => {
       return `pod > from sender pod matches ${flowName} ${tnum}`;
     },
-    FilterEntry.parse(`from:pod=${senderPod}`)!,
+    FilterEntry.parse(`from-pod:${senderPod}`)!,
     true,
     {
       fromSenderToReceiverPod,
@@ -876,7 +876,7 @@ describe('filterFlow', () => {
     (flowName: string, tnum: number) => {
       return `pod > from sender pod doesn't match ${flowName} ${tnum}`;
     },
-    FilterEntry.parse(`from:pod=${senderPod}`)!,
+    FilterEntry.parse(`from-pod:${senderPod}`)!,
     false,
     {
       fromReceiverToSenderPod,
@@ -887,7 +887,7 @@ describe('filterFlow', () => {
     (flowName: string, tnum: number) => {
       return `pod > to sender pod matches ${flowName} ${tnum}`;
     },
-    FilterEntry.parse(`to:pod=${senderPod}`)!,
+    FilterEntry.parse(`to-pod:${senderPod}`)!,
     true,
     {
       fromReceiverToSenderPod,
@@ -899,7 +899,7 @@ describe('filterFlow', () => {
     (flowName: string, tnum: number) => {
       return `pod > to sender pod doesn't match ${flowName} ${tnum}`;
     },
-    FilterEntry.parse(`to:pod=${senderPod}`)!,
+    FilterEntry.parse(`to-pod:${senderPod}`)!,
     false,
     {
       fromSenderToReceiverPod,
@@ -910,7 +910,7 @@ describe('filterFlow', () => {
     (flowName: string, tnum: number) => {
       return `pod > either sender pod matches ${flowName} ${tnum}`;
     },
-    FilterEntry.parse(`either:pod=${senderPod}`)!,
+    FilterEntry.parse(`pod:${senderPod}`)!,
     true,
     {
       fromSenderToReceiverPod,
@@ -924,7 +924,7 @@ describe('filterFlow', () => {
     (flowName: string, tnum: number) => {
       return `pod > from receiver pod matches ${flowName} ${tnum}`;
     },
-    FilterEntry.parse(`from:pod=${receiverPod}`)!,
+    FilterEntry.parse(`from-pod:${receiverPod}`)!,
     true,
     {
       fromReceiverToSenderPod,
@@ -935,7 +935,7 @@ describe('filterFlow', () => {
     (flowName: string, tnum: number) => {
       return `pod > from receiver pod doesn't match ${flowName} ${tnum}`;
     },
-    FilterEntry.parse(`from:pod=${receiverPod}`)!,
+    FilterEntry.parse(`from-pod:${receiverPod}`)!,
     false,
     {
       fromSenderToReceiverPod,
@@ -947,7 +947,7 @@ describe('filterFlow', () => {
     (flowName: string, tnum: number) => {
       return `pod > to receiver pod matches ${flowName} ${tnum}`;
     },
-    FilterEntry.parse(`to:pod=${receiverPod}`)!,
+    FilterEntry.parse(`to-pod:${receiverPod}`)!,
     true,
     {
       fromSenderToReceiverPod,
@@ -958,7 +958,7 @@ describe('filterFlow', () => {
     (flowName: string, tnum: number) => {
       return `pod > to receiver pod doesn't match ${flowName} ${tnum}`;
     },
-    FilterEntry.parse(`to:pod=${receiverPod}`)!,
+    FilterEntry.parse(`to-pod:${receiverPod}`)!,
     false,
     {
       fromReceiverToSenderPod,
@@ -970,7 +970,7 @@ describe('filterFlow', () => {
     (flowName: string, tnum: number) => {
       return `pod > either receiver pod matches ${flowName} ${tnum}`;
     },
-    FilterEntry.parse(`either:pod=${receiverPod}`)!,
+    FilterEntry.parse(`pod:${receiverPod}`)!,
     true,
     {
       fromSenderToReceiverPod,
@@ -982,7 +982,7 @@ describe('filterFlow', () => {
     (flowName: string, tnum: number) => {
       return `pod > either receiver pod matches ${flowName} ${tnum}`;
     },
-    FilterEntry.parse(`either:pod=${receiverPod}`)!,
+    FilterEntry.parse(`pod:${receiverPod}`)!,
     false,
     {
       fromSenderToSenderPod,
@@ -991,7 +991,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `negative > from label matches ${tnum} (${flowName})`,
-    FilterEntry.parse(`!from:label=namespace=SenderNs`)!,
+    FilterEntry.parse(`!from-label:namespace=SenderNs`)!,
     false,
     {
       diffNsFlow,
@@ -1010,7 +1010,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `negative > from label doesn't match ${tnum} (${flowName})`,
-    FilterEntry.parse(`!from:label=namespace=SenderNs`)!,
+    FilterEntry.parse(`!from-label:namespace=SenderNs`)!,
     true,
     {
       sameNsFlow,
@@ -1023,7 +1023,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `negative > either dns matches ${tnum} (${flowName})`,
-    FilterEntry.parse(`!either:dns=www.google.com`)!,
+    FilterEntry.parse(`!fqdn:www.google.com`)!,
     false,
     {
       toGoogleFlow,
@@ -1034,7 +1034,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `negative > either dns doesn't match ${tnum} (${flowName})`,
-    FilterEntry.parse(`!either:dns=www.google.com`)!,
+    FilterEntry.parse(`!fqdn:www.google.com`)!,
     true,
     {
       diffNsFlow,
@@ -1054,7 +1054,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `negative > either identity matches ${tnum} (${flowName})`,
-    FilterEntry.parse(`!either:identity=1`)!,
+    FilterEntry.parse(`!identity:1`)!,
     false,
     {
       normalOne: flows.normalOne,
@@ -1079,7 +1079,7 @@ describe('filterFlow', () => {
   testFilterEntry(
     (flowName: string, tnum: number) =>
       `negative > either identity doesn't match ${tnum} (${flowName})`,
-    FilterEntry.parse(`!either:identity=100500`)!,
+    FilterEntry.parse(`!identity:100500`)!,
     true,
     {
       normalOne: flows.normalOne,
@@ -1103,7 +1103,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `negative > from ip matches ${tnum} (${flowName})`,
-    FilterEntry.parse(`!from:ip=${differentIpsFlow.sourceIp}`)!,
+    FilterEntry.parse(`!from-ip:${differentIpsFlow.sourceIp}`)!,
     false,
     {
       differentIpsFlow,
@@ -1113,7 +1113,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `negative > from ip doesn't match ${tnum} (${flowName})`,
-    FilterEntry.parse(`!from:ip=${differentIpsFlow.destinationIp}`)!,
+    FilterEntry.parse(`!from-ip:${differentIpsFlow.destinationIp}`)!,
     true,
     {
       differentIpsFlow,
@@ -1123,7 +1123,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     (flowName: string, tnum: number) => `negative > either ip matches ${tnum} (${flowName})`,
-    FilterEntry.parse(`!either:ip=${differentIpsFlow.sourceIp}`)!,
+    FilterEntry.parse(`!ip:${differentIpsFlow.sourceIp}`)!,
     false,
     {
       differentIpsFlow,
@@ -1135,7 +1135,7 @@ describe('filterFlow', () => {
     (flowName: string, tnum: number) => {
       return `negative > either receiver pod matches ${flowName} ${tnum}`;
     },
-    FilterEntry.parse(`!either:pod=${receiverPod}`)!,
+    FilterEntry.parse(`!pod:${receiverPod}`)!,
     false,
     {
       fromSenderToReceiverPod,
@@ -1147,7 +1147,7 @@ describe('filterFlow', () => {
     (flowName: string, tnum: number) => {
       return `negative > either receiver pod matches ${flowName} ${tnum}`;
     },
-    FilterEntry.parse(`!either:pod=${receiverPod}`)!,
+    FilterEntry.parse(`!pod:${receiverPod}`)!,
     true,
     {
       fromSenderToSenderPod,
@@ -1156,7 +1156,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     () => `workload > to workload matches`,
-    FilterEntry.parse(`to:workload=svc:receiver`)!,
+    FilterEntry.parse(`to-workload:svc:receiver`)!,
     true,
     {
       diffNsFlow,
@@ -1165,7 +1165,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     () => `workload > to workload doesn't match`,
-    FilterEntry.parse(`to:workload=svc:receiver`)!,
+    FilterEntry.parse(`to-workload:svc:receiver`)!,
     false,
     {
       fromSenderToReceiverPod,
@@ -1174,7 +1174,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     () => `workload > to workload doesn't match`,
-    FilterEntry.parse(`to:workload=svc:sender`)!,
+    FilterEntry.parse(`to-workload:svc:sender`)!,
     false,
     {
       diffNsFlow,
@@ -1183,7 +1183,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     () => `workload > from workload matches`,
-    FilterEntry.parse(`from:workload=svc:sender`)!,
+    FilterEntry.parse(`from-workload:svc:sender`)!,
     true,
     {
       diffNsFlow,
@@ -1192,7 +1192,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     () => `workload > from workload doesn't match`,
-    FilterEntry.parse(`from:workload=svc:receiver`)!,
+    FilterEntry.parse(`from-workload:svc:receiver`)!,
     false,
     {
       diffNsFlow,
@@ -1201,7 +1201,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     () => `workload > either workload matches with receiver`,
-    FilterEntry.parse(`either:workload=svc:receiver`)!,
+    FilterEntry.parse(`workload:svc:receiver`)!,
     true,
     {
       diffNsFlow,
@@ -1210,7 +1210,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     () => `workload > either workload matches with sender`,
-    FilterEntry.parse(`either:workload=svc:sender`)!,
+    FilterEntry.parse(`workload:svc:sender`)!,
     true,
     {
       diffNsFlow,
@@ -1219,7 +1219,7 @@ describe('filterFlow', () => {
 
   testFilterEntry(
     () => `workload > either workload doesn't match`,
-    FilterEntry.parse(`either:workload=svc:unknown`)!,
+    FilterEntry.parse(`workload:svc:unknown`)!,
     false,
     {
       diffNsFlow,

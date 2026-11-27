@@ -14,7 +14,7 @@ export enum RouteHistorySourceKind {
 export enum RouteParam {
   Namespace = 'namespace',
   Verdict = 'verdict',
-  FlowsFilter = 'flows-filter',
+  FlowsFilter = 'filter',
   HttpStatus = 'http-status',
 }
 
@@ -92,16 +92,7 @@ export default class RouteStore {
       filters = [filters];
     }
 
-    return filters.reduce((acc, filter) => {
-      filter?.split(',').forEach(part => {
-        const ff = FilterEntry.parse(part);
-        if (!ff) return;
-
-        acc.push(ff);
-      });
-
-      return acc;
-    }, [] as FilterEntry[]);
+    return filters.flatMap(filter => FilterEntry.parseMany(filter));
   }
 
   goto(to: string, opts?: { resetParams: boolean }) {
