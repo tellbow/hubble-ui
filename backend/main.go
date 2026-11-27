@@ -27,6 +27,13 @@ func main() {
 		TLSToRelayClientKeyFile:  config.StrOr("TLS_RELAY_CLIENT_KEY_FILE", ""),
 		E2ETestModeEnabled:       config.BoolOr("E2E_TEST_MODE", false),
 		E2ELogfilesBasepath:      config.StrOr("E2E_LOGFILES_BASEPATH", ""),
+		AuthEnabled:              config.BoolOr("AUTH_ENABLED", false),
+		AuthIssuerURL:            config.StrOr("AUTH_OIDC_ISSUER_URL", ""),
+		AuthClientID:             config.StrOr("AUTH_OIDC_CLIENT_ID", ""),
+		AuthUsernameClaim:        config.StrOr("AUTH_OIDC_USERNAME_CLAIM", "email"),
+		AuthGroupsClaim:          config.StrOr("AUTH_OIDC_GROUPS_CLAIM", "groups"),
+		AuthUsernamePrefix:       config.StrOr("AUTH_OIDC_USERNAME_PREFIX", "oidc:"),
+		AuthGroupsPrefix:         config.StrOr("AUTH_OIDC_GROUPS_PREFIX", "oidc:"),
 	}).Build()
 
 	if err != nil {

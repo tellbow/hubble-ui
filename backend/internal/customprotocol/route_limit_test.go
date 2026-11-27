@@ -83,3 +83,70 @@ func TestRouterRefusesHugeBodies(t *testing.T) {
 		t.Fatalf("2 MB body: HTTP %d, want 400", w.Code)
 	}
 }
+
+type owner string
+
+func (o owner) OwnerKey() string { return string(o) }
+
+// With a login, a stream answers only the user who opened it, and one user
+// cannot take every stream from the others.
+func TestRouteKeepsStreamsToTheirOwner(t *testing.T) {
+	r, err := router.Builder().
+		WithBaseContext(t.Context()).
+		WithLogger(slog.New(slog.DiscardHandler)).
+		WithChannelIdBytesNumber(8).
+		WithTraceIdBytesNumber(8).
+		WithRouteResumePollTimeout(time.Millisecond).
+		WithClientPollDelays(50*time.Millisecond, 250*time.Millisecond).
+		Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.Route("blocking").Stream(func(ch *channel.Channel) error {
+		<-ch.Closed()
+		return nil
+	})
+
+	poll := func(who owner, channelId string) (int, string) {
+		body, _ := protobuf.Marshal(&cppb.Message{
+			Meta: &cppb.Meta{RouteName: "blocking", ChannelId: channelId},
+			Body: &cppb.Body{},
+		})
+		ctx := channel.WithOwner(t.Context(), who)
+		req := httptest.NewRequestWithContext(ctx, http.MethodPost, "/api/", bytes.NewReader(body))
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		msg, err := utils.ParseMessageFromProtoBytes(w.Body.Bytes())
+		if err != nil {
+			t.Fatalf("answer is no message: %v", err)
+		}
+		return w.Code, msg.ChannelId()
+	}
+
+	code, ann := poll("ann", "")
+	if code != http.StatusOK || ann == "" {
+		t.Fatalf("ann opens a stream: HTTP %d, channel %q", code, ann)
+	}
+
+	if code, _ := poll("bob", ann); code != http.StatusForbidden {
+		t.Errorf("bob polls ann's stream: HTTP %d, want 403", code)
+	}
+
+	if code, _ := poll("ann", ann); code != http.StatusOK {
+		t.Errorf("ann polls her stream again: HTTP %d", code)
+	}
+
+	for i := 1; i < 32; i++ {
+		if code, _ := poll("ann", ""); code != http.StatusOK {
+			t.Fatalf("ann's stream %d: HTTP %d", i+1, code)
+		}
+	}
+
+	if code, _ := poll("ann", ""); code != http.StatusServiceUnavailable {
+		t.Errorf("ann's 33rd stream: HTTP %d, want 503", code)
+	}
+
+	if code, _ := poll("bob", ""); code != http.StatusOK {
+		t.Errorf("bob opens a stream while ann holds 32: HTTP %d", code)
+	}
+}

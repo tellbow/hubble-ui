@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os/signal"
@@ -12,6 +13,8 @@ import (
 
 	"github.com/cilium/hubble-ui/backend/internal/api_clients"
 	"github.com/cilium/hubble-ui/backend/internal/apiserver"
+	"github.com/cilium/hubble-ui/backend/internal/auth"
+	"github.com/cilium/hubble-ui/backend/internal/authz"
 	"github.com/cilium/hubble-ui/backend/internal/config"
 	"github.com/cilium/hubble-ui/backend/internal/e2e"
 )
@@ -50,7 +53,12 @@ func (app *Application) Run() error {
 		app.GracefulShutdown()
 	})
 
+	var access *apiserver.Access
 	if app.cfg.E2ETestMode {
+		if app.cfg.Auth.Enabled {
+			return errors.New("the login needs Kubernetes, which e2e test mode does not have")
+		}
+
 		app.e2e = e2e.NewTestsController(
 			ctx,
 			app.log.With(slog.String("component", "e2e.TestsController")),
@@ -77,6 +85,30 @@ func (app *Application) Run() error {
 		}
 
 		app.clients = prodClients
+
+		if app.cfg.Auth.Enabled {
+			a := app.cfg.Auth
+			verifier, err := auth.NewVerifier(ctx, auth.Config{
+				IssuerURL:      a.IssuerURL,
+				ClientID:       a.ClientID,
+				UsernameClaim:  a.UsernameClaim,
+				GroupsClaim:    a.GroupsClaim,
+				UsernamePrefix: a.UsernamePrefix,
+				GroupsPrefix:   a.GroupsPrefix,
+			})
+			if err != nil {
+				return err
+			}
+
+			access = &apiserver.Access{
+				Verifier: verifier,
+				Authorizer: authz.New(
+					app.log.With(slog.String("component", "authz")),
+					authz.KubernetesReview(prodClients.Reviews()),
+					authz.KubernetesNamespaces(prodClients.Reviews()),
+				),
+			}
+		}
 	}
 
 	handlerMiddleware := app.e2e.HandlerMiddleware
@@ -92,6 +124,7 @@ func (app *Application) Run() error {
 		app.opts.ApiRoute,
 		app.clients,
 		handlerMiddleware,
+		access,
 	)
 
 	if err != nil {

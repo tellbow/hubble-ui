@@ -16,9 +16,17 @@ type RouteKind string
 
 // maxChannels caps the open channels of a route: every service map channel
 // holds a hubble-relay stream, and anyone who reaches the UI can open them.
-const maxChannels = 512
+// With a login, one user may hold maxChannelsPerOwner of them, so that they
+// cannot take all of them from the others (a tab holds one per route).
+const (
+	maxChannels         = 512
+	maxChannelsPerOwner = 32
+)
 
-var ErrTooManyChannels = errors.New("too many open streams, try again later")
+var (
+	ErrTooManyChannels = errors.New("too many open streams, try again later")
+	ErrNotOwner        = errors.New("this stream was opened by someone else")
+)
 
 // NOTE: There is no further division if stream is uni- or bidirectional
 const (
@@ -51,8 +59,13 @@ func (r *Route) Poll(ctx context.Context, msg *message.Message) (
 	}
 
 	resp, err := resume(ctx, msg)
-	if errors.Is(err, ErrTooManyChannels) {
-		r.log.Warn("refusing a new channel", "max", maxChannels)
+	if errors.Is(err, ErrTooManyChannels) || errors.Is(err, ErrNotOwner) {
+		code := http.StatusServiceUnavailable
+		if errors.Is(err, ErrNotOwner) {
+			code = http.StatusForbidden
+		}
+
+		r.log.Warn("refusing a channel", "error", err, "owner", channel.OwnerKey(channel.OwnerFrom(ctx)))
 
 		return message.Builder().
 			WithChannelId(msg.ChannelId()).
@@ -62,7 +75,7 @@ func (r *Route) Poll(ctx context.Context, msg *message.Message) (
 			WithNotReady(true).
 			WithEmpty(true).
 			WithError(err).
-			WithStatusCode(http.StatusServiceUnavailable).
+			WithStatusCode(code).
 			Build()
 	}
 
@@ -74,9 +87,9 @@ func (r *Route) Poll(ctx context.Context, msg *message.Message) (
 // * It reads incoming messages but doesn't send anything back
 // * It both reads incoming and sends outgoing messages
 func (r *Route) resumeStream(
-	_ctx context.Context, msg *message.Message,
+	ctx context.Context, msg *message.Message,
 ) (*message.Message, error) {
-	ch, isNew, err := r.getChannel(msg)
+	ch, isNew, err := r.getChannel(ctx, msg)
 
 	if err != nil {
 		return nil, err
@@ -103,9 +116,9 @@ func (r *Route) resumeStream(
 }
 
 func (r *Route) resumeOneshot(
-	_ctx context.Context, msg *message.Message,
+	ctx context.Context, msg *message.Message,
 ) (*message.Message, error) {
-	ch, isNew, err := r.getChannel(msg)
+	ch, isNew, err := r.getChannel(ctx, msg)
 	if err != nil {
 		return nil, err
 	}
@@ -236,19 +249,30 @@ func (r *Route) pollChannel(
 
 // NOTE: This is a main method that maps message to corresponding Channel
 // TODO: Make channels map thread safe
-func (r *Route) getChannel(msg *message.Message) (
+func (r *Route) getChannel(ctx context.Context, msg *message.Message) (
 	*channel.Channel, bool, error,
 ) {
 	r.channels.Lock()
 	defer r.channels.Unlock()
 
+	owner := channel.OwnerFrom(ctx)
+	key := channel.OwnerKey(owner)
+
 	cid := msg.ChannelId()
 	existing, ok := r.channels.GetByIdUnsafe(cid)
 	if ok {
+		if channel.OwnerKey(existing.Owner()) != key {
+			return nil, false, ErrNotOwner
+		}
+
 		return existing, false, nil
 	}
 
 	if r.channels.SizeUnsafe() >= maxChannels {
+		return nil, false, ErrTooManyChannels
+	}
+
+	if key != "" && r.channels.CountOwnedUnsafe(key) >= maxChannelsPerOwner {
 		return nil, false, ErrTooManyChannels
 	}
 
@@ -259,9 +283,10 @@ func (r *Route) getChannel(msg *message.Message) (
 
 	newch, err := channel.Builder().
 		WithId(cid).
-		WithShutdownContext(r.baseContext).
+		WithShutdownContext(r.baseContext). //nolint:contextcheck // a stream outlives the request that opens it
 		WithTimings(chTimings).
 		WithMiddlewares(r.cloneMiddlewares()).
+		WithOwner(owner).
 		Build()
 
 	if err != nil {

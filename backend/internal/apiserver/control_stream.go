@@ -22,6 +22,13 @@ func (srv *APIServer) ControlStream(
 ) error {
 	log, ctx := rctx.Log, ch.Context()
 
+	scope, err := srv.scope(ch)
+	if err != nil {
+		return err
+	}
+
+	log.Info("control stream opened", "user", scope.User())
+
 	nsWatcher, err := srv.clients.NSWatcher(ctx, ns_watcher.NSWatcherOptions{
 		Log: log.With(slog.String("component", "ControlStream.NSWatcher")),
 	})
@@ -57,7 +64,7 @@ func (srv *APIServer) ControlStream(
 	go nsWatcher.Run(ctx)
 	defer nsWatcher.Stop()
 
-	go srv.sendNamespaceActivity(ch, log)
+	go srv.sendNamespaceActivity(ch, scope, log)
 
 	dataStash := data_stash.New()
 	nsDebounce := debounce.New(100 * time.Millisecond)
@@ -74,6 +81,10 @@ F:
 		case <-ctx.Done():
 			break F
 		case evt := <-nsWatcher.NSEvents():
+			if !scope.Namespace(evt.GetNamespaceStr()) {
+				break
+			}
+
 			dataStash.PushNamespaceEvent(evt)
 			log.Debug("pushing ns event")
 			nsDebounce.Touch()

@@ -9,6 +9,7 @@ import (
 
 	"github.com/cilium/cilium/api/v1/flow"
 
+	"github.com/cilium/hubble-ui/backend/internal/authz"
 	cp "github.com/cilium/hubble-ui/backend/internal/customprotocol"
 	"github.com/cilium/hubble-ui/backend/proto/ui"
 )
@@ -51,12 +52,14 @@ func (srv *APIServer) namespaceActivity(ctx context.Context) (*ui.NamespaceActiv
 
 // sendNamespaceActivity sends the counts to a control stream once: they are
 // a snapshot for the welcome screen, not kept in sync.
-func (srv *APIServer) sendNamespaceActivity(ch *cp.Channel, log *slog.Logger) {
+func (srv *APIServer) sendNamespaceActivity(ch *cp.Channel, scope *authz.Scope, log *slog.Logger) {
 	act, err := srv.namespaceActivity(ch.Context())
 	if err != nil {
 		log.Debug("namespace activity not available", "error", err)
 		return
 	}
+
+	act = visibleActivity(act, scope)
 
 	resp := &ui.GetControlStreamResponse{
 		Event: &ui.GetControlStreamResponse_Activity{Activity: act},
@@ -107,4 +110,21 @@ func countByNamespace(flows []*flow.Flow) *ui.NamespaceActivity {
 
 	act.Namespaces = entries
 	return act
+}
+
+// visibleActivity keeps the counts of the namespaces scope covers; the
+// cache is shared, so it is copied, not changed.
+func visibleActivity(act *ui.NamespaceActivity, scope *authz.Scope) *ui.NamespaceActivity {
+	if scope.All() {
+		return act
+	}
+
+	out := &ui.NamespaceActivity{FlowsCounted: act.GetFlowsCounted()}
+	for _, e := range act.GetNamespaces() {
+		if scope.Namespace(e.GetNamespace()) {
+			out.Namespaces = append(out.Namespaces, e)
+		}
+	}
+
+	return out
 }
