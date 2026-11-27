@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 
 	cilium "github.com/cilium/cilium/pkg/k8s/client/clientset/versioned"
 
@@ -19,8 +20,9 @@ type APIClients struct {
 	cfg *config.Config
 	log *slog.Logger
 
-	k8s    kubernetes.Interface
-	cilium *cilium.Clientset
+	k8s     kubernetes.Interface
+	reviews kubernetes.Interface
+	cilium  *cilium.Clientset
 
 	// TODO: GRPCClient can be refactored to be a generalized connection pool
 	// for both Relay/Timescape clients
@@ -43,6 +45,14 @@ func New(
 	}
 
 	clients.k8s = k8s
+
+	// A user's first page load checks every namespace, one SubjectAccessReview
+	// each; client-go's default of 5 requests/s made that take seconds.
+	reviewConfig := rest.CopyConfig(k8sConfig)
+	reviewConfig.QPS, reviewConfig.Burst = 200, 400
+	if clients.reviews, err = kubernetes.NewForConfig(reviewConfig); err != nil {
+		return nil, errors.Wrap(err, "k8s clientset init failed")
+	}
 
 	ciliumClientset, err := initCiliumClientset(k8sConfig)
 	if err != nil {
@@ -79,4 +89,9 @@ func (c *APIClients) RelayClient() relay_client.RelayClientInterface {
 	}
 
 	return cl
+}
+
+// Reviews is the Kubernetes client for checking users' access.
+func (c *APIClients) Reviews() kubernetes.Interface {
+	return c.reviews
 }

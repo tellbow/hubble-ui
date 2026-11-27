@@ -8,6 +8,8 @@ import (
 	"time"
 
 	pb_flow "github.com/cilium/cilium/api/v1/flow"
+	"github.com/cilium/cilium/api/v1/observer"
+	v1 "github.com/cilium/cilium/pkg/hubble/api/v1"
 	"github.com/cilium/cilium/pkg/hubble/filters"
 	"github.com/cilium/hubble-ui/backend/proto/ui"
 	"google.golang.org/grpc/codes"
@@ -22,6 +24,7 @@ import (
 
 	"github.com/cilium/hubble-ui/backend/internal/api_helpers"
 	"github.com/cilium/hubble-ui/backend/internal/apiserver/req_context"
+	"github.com/cilium/hubble-ui/backend/internal/authz"
 	cp "github.com/cilium/hubble-ui/backend/internal/customprotocol"
 	"github.com/cilium/hubble-ui/backend/internal/flow_stream"
 	"github.com/cilium/hubble-ui/backend/internal/hubble_client"
@@ -44,7 +47,12 @@ func (srv *APIServer) ServiceMapStream(
 		return err
 	}
 
-	log.Info("GetEventsRequest parsed", "req", req)
+	scope, err := srv.scope(ch)
+	if err != nil {
+		return err
+	}
+
+	log.Info("GetEventsRequest parsed", "user", scope.User(), "req", req)
 
 	if len(req.GetEventTypes()) == 0 {
 		log.Info("Requested events are empty, terminating...")
@@ -54,9 +62,26 @@ func (srv *APIServer) ServiceMapStream(
 	// hubble-relay only logs a filter its nodes reject and ends the stream as
 	// if no flows were left, so the UI would reconnect forever without saying
 	// why. Cilium's own check, run here first, gives the error.
-	if err := checkFilters(ctx, log, req); err != nil {
+	flowsReq := flow_stream.ExtractFlowsRequest(req)
+	whitelist, blacklist, err := checkFilters(ctx, log, flowsReq)
+	if err != nil {
 		log.Warn("rejecting invalid flow filters", "error", err)
 		return err
+	}
+
+	// A user who may not see everything gets the flows of their namespaces
+	// from relay, and their own filters run here on the flows as they may see
+	// them. At relay the filters would also match the hidden end of a flow, and
+	// which flows come through would tell them about it: `to-pod:payments/`.
+	userFilters := !scope.All()
+	visible := []string(nil)
+	if userFilters {
+		if visible, err = scope.Namespaces(); err != nil {
+			log.Error("listing namespaces failed", "error", err)
+			return status.Error(codes.Unavailable, "cannot list namespaces")
+		}
+
+		flowsReq.Whitelist, flowsReq.Blacklist = authz.FlowFilters(visible), nil
 	}
 
 	relayClient := srv.clients.RelayClient()
@@ -72,10 +97,10 @@ func (srv *APIServer) ServiceMapStream(
 	defer flows.Stop()
 
 	var flowStream flow_stream.FlowStreamInterface
-	if eventsRequested.FlowsRequired() {
+	if eventsRequested.FlowsRequired() && (!userFilters || len(visible) > 0) {
 		flowStream = relayClient.FlowStream()
 
-		go flowStream.Run(ctx, flow_stream.ExtractFlowsRequest(req))
+		go flowStream.Run(ctx, flowsReq)
 		defer flowStream.Stop()
 	} else {
 		flowStream = flow_stream.NewDumb()
@@ -152,6 +177,16 @@ F:
 				return err
 			}
 		case pbFlow := <-flowStream.Flows():
+			// shortcut: a user's namespaces are listed when the stream opens;
+			// one created later shows after the UI reconnects.
+			if pbFlow = scope.Flow(pbFlow); pbFlow == nil {
+				break
+			}
+
+			if userFilters && !filters.Apply(whitelist, blacklist, &v1.Event{Event: pbFlow}) {
+				break
+			}
+
 			if isAdded := flows.Push(pbFlow); isAdded {
 				break
 			}
@@ -176,13 +211,16 @@ F:
 	return nil
 }
 
-func checkFilters(ctx context.Context, log *slog.Logger, req *ui.GetEventsRequest) error {
-	fr := flow_stream.ExtractFlowsRequest(req)
-	for _, ff := range [][]*pb_flow.FlowFilter{fr.GetWhitelist(), fr.GetBlacklist()} {
-		if _, err := filters.BuildFilterList(ctx, ff, filters.DefaultFilters(log)); err != nil {
-			return status.Error(codes.InvalidArgument, err.Error())
-		}
+func checkFilters(
+	ctx context.Context, log *slog.Logger, fr *observer.GetFlowsRequest,
+) (whitelist, blacklist filters.FilterFuncs, err error) {
+	if whitelist, err = filters.BuildFilterList(ctx, fr.GetWhitelist(), filters.DefaultFilters(log)); err != nil {
+		return nil, nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	return nil
+	if blacklist, err = filters.BuildFilterList(ctx, fr.GetBlacklist(), filters.DefaultFilters(log)); err != nil {
+		return nil, nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	return whitelist, blacklist, nil
 }

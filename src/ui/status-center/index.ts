@@ -13,6 +13,7 @@ const intentValues = new Set(Object.values(Intent));
 
 export enum Keys {
   DataStreamsReconnecting = 'data-streams-reconnecting',
+  SignedOut = 'signed-out',
   ReconnectingToHubbleRelay = 'reconnecting-to-hubble-relay',
   ReconnectedToHubbleRelay = 'reconnected-to-hubble-relay',
 }

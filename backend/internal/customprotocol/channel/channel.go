@@ -25,7 +25,8 @@ type ChannelMiddleware interface {
 }
 
 type Channel struct {
-	Id string
+	Id    string
+	owner Owner
 
 	shutdownContext context.Context
 	ctx             context.Context

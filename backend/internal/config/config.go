@@ -46,6 +46,10 @@ type Config struct {
 	TLSRelayClientCertFile string
 	TLSRelayClientKeyFile  string
 
+	// With Auth.Enabled, every request needs an OIDC ID token, and a user
+	// sees the namespaces Kubernetes RBAC grants them (see internal/authz).
+	Auth Auth
+
 	relayClientConfig certloader.ClientConfigBuilder
 }
 
@@ -69,4 +73,15 @@ func (cfg *Config) AsRelayClientTLSConfig() (*tls.Config, error) {
 		MinVersion: tls.VersionTLS13,
 		ServerName: cfg.TLSRelayServerName,
 	}), nil
+}
+
+type Auth struct {
+	Enabled bool
+
+	IssuerURL      string
+	ClientID       string
+	UsernameClaim  string
+	GroupsClaim    string
+	UsernamePrefix string
+	GroupsPrefix   string
 }

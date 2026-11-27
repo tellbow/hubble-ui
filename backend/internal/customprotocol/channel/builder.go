@@ -14,6 +14,7 @@ type ChannelBuilder struct {
 	shutdownCtx context.Context
 	timings     *timings.ChannelTimings
 	middlewares []ChannelMiddleware
+	owner       Owner
 }
 
 func Builder() ChannelBuilder {
@@ -40,6 +41,11 @@ func (b ChannelBuilder) WithMiddlewares(mws []ChannelMiddleware) ChannelBuilder 
 	return b
 }
 
+func (b ChannelBuilder) WithOwner(o Owner) ChannelBuilder {
+	b.owner = o
+	return b
+}
+
 func (b ChannelBuilder) Build() (*Channel, error) {
 	if b.shutdownCtx == nil {
 		return nil, b.err("shutdownCtx")
@@ -56,6 +62,7 @@ func (b ChannelBuilder) Build() (*Channel, error) {
 
 	ch := &Channel{
 		Id:              b.id,
+		owner:           b.owner,
 		shutdownContext: b.shutdownCtx,
 		ctx:             ctx,
 		cancel:          cancel,

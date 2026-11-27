@@ -44,6 +44,10 @@ func (b *ConfigBuilder) Build() (*Config, error) {
 		return nil, err
 	}
 
+	if err := b.initAuth(cfg); err != nil {
+		return nil, err
+	}
+
 	return cfg, nil
 }
 
@@ -225,5 +229,50 @@ func (b *ConfigBuilder) initTestModeFlags(cfg *Config) error {
 	cfg.E2ETestMode = e2eMode.Value
 	cfg.E2ELogFilesBasePath = logFiles.Value
 
+	return nil
+}
+
+func (b *ConfigBuilder) initAuth(cfg *Config) error {
+	if b.props.AuthEnabled == nil {
+		return nil
+	}
+
+	enabled := b.props.AuthEnabled()
+	if err := enabled.Err(); err != nil {
+		return err
+	}
+
+	if !enabled.Value {
+		b.logger.Warn("login is off: everyone who reaches the UI sees every namespace")
+		return nil
+	}
+
+	a := &cfg.Auth
+	a.Enabled = true
+	for _, s := range []struct {
+		get  EnvVarGetter[string]
+		into *string
+	}{
+		{b.props.AuthIssuerURL, &a.IssuerURL},
+		{b.props.AuthClientID, &a.ClientID},
+		{b.props.AuthUsernameClaim, &a.UsernameClaim},
+		{b.props.AuthGroupsClaim, &a.GroupsClaim},
+		{b.props.AuthUsernamePrefix, &a.UsernamePrefix},
+		{b.props.AuthGroupsPrefix, &a.GroupsPrefix},
+	} {
+		v := s.get()
+		if err := v.Err(); err != nil {
+			return err
+		}
+
+		v.LogIfFallback(b.logger)
+		*s.into = v.Value
+	}
+
+	if a.IssuerURL == "" || a.ClientID == "" || a.UsernameClaim == "" {
+		return b.err("AUTH_OIDC_ISSUER_URL, AUTH_OIDC_CLIENT_ID or AUTH_OIDC_USERNAME_CLAIM")
+	}
+
+	b.logger.Info("login is on", "issuer", a.IssuerURL, "clientId", a.ClientID)
 	return nil
 }

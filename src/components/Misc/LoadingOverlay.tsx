@@ -41,6 +41,8 @@ export const getProps = (
   dataMode: DataMode,
   namespace?: string | null,
   filtered = false,
+  // Not in the namespace list: misspelt, deleted, or hidden by the login.
+  unlisted = false,
 ): GetProps => {
   const spinnerIntent = flowsWaitTimeout ? Intent.NONE : Intent.SUCCESS;
   // NOTE: '' is "All namespaces"
@@ -51,6 +53,10 @@ export const getProps = (
   let map = 'No data found to render a service map';
   if (dataMode === DataMode.CiliumStreaming && !flowsWaitTimeout) {
     flowsTable = map = 'Waiting for flows…';
+  } else if (dataMode === DataMode.CiliumStreaming && unlisted && !filtered) {
+    // Same words for both: saying "no access" would confirm the namespace exists.
+    map = `Namespace ${namespace} doesn't exist, or you can't see it.`;
+    flowsTable = `${map} Choose one from the namespace list.`;
   } else if (dataMode === DataMode.CiliumStreaming) {
     map = filtered ? 'No flows match the current filters.' : `No traffic seen in ${where}.`;
     flowsTable =
