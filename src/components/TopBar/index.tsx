@@ -14,6 +14,7 @@ import { VerdictFilterDropdown } from './VerdictFilterDropdown';
 import { VisualFiltersDropdown } from './VisualFiltersDropdown';
 import { NamespaceSelectorDropdown } from './NamespaceSelectorDropdown';
 import { ConnectionIndicator } from './ConnectionIndicator';
+import { SignOut } from './SignOut';
 
 import css from './styles.scss';
 
@@ -89,6 +90,7 @@ export const TopBar = observer(function TopBar(props: Props) {
         <div className={css.spacer} />
 
         <ConnectionIndicator transferState={props.transferState} />
+        <SignOut />
       </div>
     </div>
   );

@@ -43,6 +43,20 @@
     @include row(flex-end, center);
   }
 
+  .signOut {
+    @include row(flex-end, center);
+    gap: 4px;
+    margin-left: 16px;
+  }
+
+  .user {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--hubble-ui-text-secondary);
+  }
+
   .namespacesDropdownButton {
     display: flex;
     flex-wrap: nowrap;
@@ -168,6 +182,10 @@
 
   .topbar .namespacesDropdownButton {
     width: calc(100vw - 52px);
+  }
+
+  .topbar .user {
+    display: none;
   }
 }
 

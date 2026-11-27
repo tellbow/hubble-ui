@@ -5,6 +5,11 @@ import { HTTPResult } from './result';
 
 export { HTTPResult } from './result';
 
+// Dispatched on window when the backend answers 401: the login in front of
+// the UI (oauth2-proxy) has no session any more, or the backend refused its
+// token. Polling again cannot help until the page signs in again.
+export const SignedOutEvent = 'hubble-ui:signed-out';
+
 export type Options = {
   baseURL: string;
   cors: boolean;
@@ -128,7 +133,10 @@ export class RepeatableRequest {
     const req = this.reqBuilder(aborter);
     this.aborter = aborter;
 
-    return fetch(req).then(resp => HTTPResult.from(resp));
+    return fetch(req).then(resp => {
+      if (resp.status === 401) window.dispatchEvent(new Event(SignedOutEvent));
+      return HTTPResult.from(resp);
+    });
   }
 
   public abort() {

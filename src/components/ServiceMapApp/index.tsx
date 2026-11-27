@@ -165,11 +165,15 @@ export const ServiceMapApp = observer(function ServiceMapApp() {
     );
   });
 
+  const current = store.namespaces.current;
+  // '' is "All namespaces"
+  const namespaceUnlisted = !!current?.namespace && !store.namespaces.has(current);
   const loadingOverlay = getLoadingOverlayProps(
     flowsWaitTimeout,
     dataLayer.transferState.dataMode,
-    store.namespaces.current?.namespace,
+    current?.namespace,
     store.filters.isNarrowed,
+    namespaceUnlisted,
   );
 
   const RenderedTopBar = (
@@ -275,6 +279,7 @@ export const ServiceMapApp = observer(function ServiceMapApp() {
 
       <DetailsPanel
         namespace={store.namespaces.current?.namespace ?? null}
+        namespaceUnlisted={namespaceUnlisted}
         transferState={dataLayer.transferState}
         flowsWaitTimeout={flowsWaitTimeout}
         flows={store.currentFrame.interactions.flows}

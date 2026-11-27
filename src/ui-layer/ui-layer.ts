@@ -12,6 +12,7 @@ import { ServiceMap } from './service-map';
 
 import { CommonUtils, Options } from './common';
 import { ConnectEvent } from '~/data-layer/connect-event';
+import { SignedOutEvent } from '~/api/http-client';
 
 export type BuildOptions = {
   router: Router;
@@ -94,6 +95,13 @@ export class UILayer {
     // stream only seems to reconnect forever.
     this.dataLayer.serviceMap.onErrors(errs => {
       this.statusCenter.pushControlStreamErrors(errs);
+    });
+
+    // Streams would only be refused again; stop them and say why.
+    window.addEventListener(SignedOutEvent, () => {
+      this.statusCenter.pushSignedOut();
+      void this.dataLayer.serviceMap.dropDataFetch();
+      void this.dataLayer.controls.stopFetches();
     });
   }
 

@@ -318,3 +318,45 @@ test('a value in the flow details toggles a filter for flows like it', async ({ 
   await expect(page).not.toHaveURL(/filter=/);
   await expect(row(page, 'api').first()).toBeVisible();
 });
+
+test('a lost session says so and stops polling', async ({ page }) => {
+  await open(page, 'demo');
+  await expect(row(page, 'api').first()).toBeVisible();
+
+  // As oauth2-proxy answers once its session is gone (with --api-route).
+  let refused = 0;
+  await page.route('**/api/**', route => {
+    refused++;
+    return route.fulfill({ status: 401, body: 'not signed in' });
+  });
+
+  await expect(page.getByText('Your session has ended')).toBeVisible({ timeout: 15000 });
+  const after = refused;
+  await page.waitForTimeout(8000);
+  expect(refused - after).toBeLessThanOrEqual(1);
+  await expect(page.getByText('Data streams are reconnecting')).toHaveCount(0);
+});
+
+test('sign out shows only behind oauth2-proxy', async ({ page }) => {
+  await open(page, 'demo');
+  await expect(row(page, 'api').first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Sign out' })).toHaveCount(0);
+
+  await page.route('**/oauth2/userinfo', route =>
+    route.fulfill({ json: { user: '1', email: 'ann@example.com' } }),
+  );
+  await open(page, 'demo');
+  await expect(page.getByText('ann@example.com')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Sign out' })).toHaveAttribute(
+    'href',
+    'oauth2/sign_out?rd=%2F',
+  );
+});
+
+test('a namespace not in the list says so, without saying whether it exists', async ({ page }) => {
+  await open(page, 'no-such-namespace');
+  await expect(
+    page.getByText("Namespace no-such-namespace doesn't exist, or you can't see it.").first(),
+  ).toBeVisible({ timeout: 20000 });
+  await expect(page.getByText('No traffic seen')).toHaveCount(0);
+});

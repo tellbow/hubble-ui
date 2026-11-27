@@ -201,6 +201,19 @@ export class StatusCenter extends EventEmitter<Handlers> {
     return this.pushEntry(entry);
   }
 
+  public pushSignedOut() {
+    const entry = StatusEntryBuilder.new()
+      .setIntent(Intent.Critical)
+      .setTitle('Signed out')
+      .setDetails('Your session has ended. Reload the page to sign in again.')
+      .setComponent(Component.HubbleUI)
+      .setPersistent(true)
+      .setKey(Keys.SignedOut)
+      .build();
+
+    return this.pushEntry(entry);
+  }
+
   public pushStreamsReconnecting() {
     const entry = StatusEntryBuilder.new()
       .setIntent(Intent.Error)

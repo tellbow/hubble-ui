@@ -25,6 +25,7 @@ export type { OnFlowsDiffCount };
 
 interface PanelProps {
   namespace: string | null;
+  namespaceUnlisted?: boolean;
   transferState: TransferState;
   flowsWaitTimeout: boolean;
   flowsTableVisibleColumns: Set<Column>;
@@ -81,6 +82,7 @@ export const DetailsPanel = observer(function DetailsPanel(props: Props) {
     dataMode,
     props.namespace,
     props.filters.isNarrowed,
+    props.namespaceUnlisted,
   );
 
   return (
