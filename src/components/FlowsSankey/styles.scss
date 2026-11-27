@@ -38,6 +38,12 @@
 
   text {
     fill: var(--hubble-ui-text-primary);
+
+    // Middle-column names sit on the bands; an outline in the map colour keeps them readable.
+    paint-order: stroke;
+    stroke: var(--hubble-ui-map-bg-solid);
+    stroke-width: 4px;
+    stroke-linejoin: round;
   }
 }
 

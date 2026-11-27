@@ -7,6 +7,39 @@ This is tellbow's fork of [cilium/hubble-ui](https://github.com/cilium/hubble-ui
 maintained on its own: it builds, tests and publishes its images here, and takes
 fixes from upstream as backports (see [Upstream](#-upstream)).
 
+## ✨ What this fork adds
+
+**Finding flows**
+- A filter language with the flags of `hubble observe` (`from-pod:frontend
+  to-port:443 !label:app=db`), checked as you type, kept in the URL
+  ([Filtering flows](#filtering-flows)).
+- A **Builder** mode that edits the same filters as rows, suggesting the values
+  seen on screen.
+- Click a value in the flow details (verdict, encrypted, direction, event type,
+  port, pod, label, IP, DNS, …) to add or remove a filter for it.
+- A **Sankey** view of who talks to whom on which port, next to the service map.
+
+**Seeing more**
+- A welcome screen that lists namespaces by their traffic; "All namespaces"
+  with a box per namespace.
+- The policies that allowed or denied a flow, its encryption status, and why a
+  red arrow drops (click it for the dropped flows).
+- One world card per identity, titled by its label.
+- A time range, pause, CSV and Hubble JSON export, dark mode, phone-width layouts.
+
+**Holding up**
+- Streams that no longer get stuck, lose messages or leak, found by fault
+  injection; the UI reopens them after a backend restart.
+- Errors reach the screen: a filter Cilium rejects is reported once instead of
+  reconnecting forever.
+- Limits on open streams and request size; CORS from loopback only.
+- Playwright tests in a real browser, and the filters golden-tested against
+  Cilium's own filter code.
+
+| Filter builder | Sankey view | Flow details |
+| :-: | :-: | :-: |
+| ![Filter builder](promo/filter-builder.png) | ![Sankey view](promo/sankey.png) | ![Flow details with clickable values](promo/flow-details.png) |
+
 ## 🚀 Installation
 
 Hubble UI is installed as part of Hubble. Please see the Hubble [Getting Started Guide](https://docs.cilium.io/en/stable/gettingstarted/hubble/#deploy-cilium-and-hubble) for instructions.
