@@ -262,14 +262,14 @@ describe('filterService', () => {
 
   testFilterEntry(
     (svcName: string, tnum: number) => `identity > to matches ${tnum} (${svcName})`,
-    FilterEntry.parse(`to:identity=${regular.identity}`)!,
+    FilterEntry.parse(`to-identity:${regular.identity}`)!,
     true,
     { regular },
   );
 
   testFilterEntry(
     (svcName: string, tnum: number) => `identity > to doesnt match ${tnum} (${svcName})`,
-    FilterEntry.parse(`to:identity=${regular.identity}`)!,
+    FilterEntry.parse(`to-identity:${regular.identity}`)!,
     false,
     {
       world,
@@ -281,14 +281,14 @@ describe('filterService', () => {
 
   testFilterEntry(
     (svcName: string, tnum: number) => `identity > from matches ${tnum} (${svcName})`,
-    FilterEntry.parse(`from:identity=${regular.identity}`)!,
+    FilterEntry.parse(`from-identity:${regular.identity}`)!,
     true,
     { regular },
   );
 
   testFilterEntry(
     (svcName: string, tnum: number) => `identity > from doesnt match ${tnum} (${svcName})`,
-    FilterEntry.parse(`from:identity=${regular.identity}`)!,
+    FilterEntry.parse(`from-identity:${regular.identity}`)!,
     false,
     {
       world,
@@ -300,14 +300,14 @@ describe('filterService', () => {
 
   testFilterEntry(
     (svcName: string, tnum: number) => `identity > either matches ${tnum} (${svcName})`,
-    FilterEntry.parse(`either:identity=${regular.identity}`)!,
+    FilterEntry.parse(`identity:${regular.identity}`)!,
     true,
     { regular },
   );
 
   testFilterEntry(
     (svcName: string, tnum: number) => `identity > either doesnt match ${tnum} (${svcName})`,
-    FilterEntry.parse(`either:identity=${regular.identity}`)!,
+    FilterEntry.parse(`identity:${regular.identity}`)!,
     false,
     {
       world,
@@ -319,7 +319,7 @@ describe('filterService', () => {
 
   testFilterEntry(
     (svcName: string, tnum: number) => `identity > negative > either matches ${tnum} (${svcName})`,
-    FilterEntry.parse(`!either:identity=${regular.id}`)!,
+    FilterEntry.parse(`!identity:${regular.identity}`)!,
     false,
     { regular },
   );
@@ -328,7 +328,7 @@ describe('filterService', () => {
   // testFilterEntry(
   //   (svcName: string, tnum: number) =>
   //     `identity > negative > either doesn't match ${tnum} (${svcName})`,
-  //   FilterEntry.parse(`!either:identity=${regular.id}`)!,
+  //   FilterEntry.parse(`!identity:${regular.identity}`)!,
   //   true,
   //   {
   //     world,
@@ -599,7 +599,7 @@ describe('DNS service filters', () => {
   );
 
   test('preserves negative DNS filtering', () => {
-    const filter = FilterEntry.parse('!either:dns=API.example.com')!;
+    const filter = FilterEntry.parse('!fqdn:API.example.com')!;
     expect(filterServiceByEntry(service, filter)).toBe(false);
     expect(filterServiceByEntry(service, FilterEntry.newDNS('other.example.com'))).toBe(false);
   });

@@ -3,6 +3,8 @@ import React, { memo, useCallback, useEffect, useState } from 'react';
 
 import { Flow, Verdict } from '~/domain/flows';
 import { Filters, FilterEntry, FilterDirection } from '~/domain/filtering';
+import { dropReasonName, protocols } from '~/domain/filtering/fields';
+import { TrafficDirection } from '~/domain/hubble';
 import { TCPFlagName, PodSelector, IPProtocol, AuthType } from '~/domain/hubble';
 import { KV, Labels } from '~/domain/labels';
 
@@ -14,6 +16,7 @@ import {
   DnsBodyItem,
   IdentityEntry,
   PodEntry,
+  FilterValue,
 } from './SidebarComponents';
 
 import css from './styles.scss';
@@ -29,6 +32,8 @@ export interface Props {
   onIdentityClick?: (identity?: string, direction?: FilterDirection) => void;
   onIpClick?: (ip?: string, direction?: FilterDirection) => void;
   onDnsClick?: (dns?: string) => void;
+  // toggles a filter, given as code mode text
+  onFilterClick?: (filter: string) => void;
 }
 
 export const FlowsTableSidebar = memo<Props>(function FlowsTableSidebar(props) {
@@ -36,6 +41,11 @@ export const FlowsTableSidebar = memo<Props>(function FlowsTableSidebar(props) {
 
   const tcpFilterDirection = FilterDirection.From;
   const isVerdictSelected = !!props.filters.verdicts?.has(flow.verdict);
+  const filterValue = (filter: string | null) => ({
+    filter,
+    filters: props.filters,
+    onClick: props.onFilterClick,
+  });
   const protocol = props.flow.protocolStr;
 
   const onVerdictClick = useCallback(() => {
@@ -60,6 +70,7 @@ export const FlowsTableSidebar = memo<Props>(function FlowsTableSidebar(props) {
     const podsSelection: Set<string> = new Set();
     const idtySelection: Set<number> = new Set();
     const ipsSelection: Set<string> = new Set();
+    let dnsSelected = false;
 
     const sourceLabels = props.flow.sourceLabels.reduce((acc, lbl: KV) => {
       const concatedLabel = Labels.concatKV(lbl);
@@ -134,7 +145,7 @@ export const FlowsTableSidebar = memo<Props>(function FlowsTableSidebar(props) {
       }
 
       if (filter.isDNS && filter.query.toLowerCase() === flow.destinationDns?.toLowerCase()) {
-        setDnsSelected(true);
+        dnsSelected = true;
       }
 
       if (!filter.isLabel) return;
@@ -147,15 +158,11 @@ export const FlowsTableSidebar = memo<Props>(function FlowsTableSidebar(props) {
     setPodSelection(podsSelection);
     setIdSelection(idtySelection);
     setIpSelection(ipsSelection);
+    setDnsSelected(dnsSelected);
   }, [props.flow, props.filters.filters]);
 
   const onTcpFlagClick = useCallback(
     (flag: TCPFlagName) => {
-      const isSelected = tcpFlagSelection.has(flag);
-      if (isSelected) {
-        return props.onTcpFlagClick?.();
-      }
-
       props.onTcpFlagClick?.(flag, tcpFilterDirection);
     },
     [props.onTcpFlagClick, tcpFlagSelection],
@@ -163,13 +170,6 @@ export const FlowsTableSidebar = memo<Props>(function FlowsTableSidebar(props) {
 
   const onSourceLabelClick = useCallback(
     (label: KV) => {
-      const labelStr = Labels.concatKV(label);
-      const isSelected = labelsSelection.has(labelStr);
-
-      if (isSelected) {
-        return props.onLabelClick?.();
-      }
-
       props.onLabelClick?.(label, FilterDirection.From);
     },
     [props.onLabelClick, labelsSelection],
@@ -177,13 +177,6 @@ export const FlowsTableSidebar = memo<Props>(function FlowsTableSidebar(props) {
 
   const onDestLabelClick = useCallback(
     (label: KV) => {
-      const labelStr = Labels.concatKV(label);
-      const isSelected = labelsSelection.has(labelStr);
-
-      if (isSelected) {
-        return props.onLabelClick?.();
-      }
-
       props.onLabelClick?.(label, FilterDirection.To);
     },
     [props.onLabelClick, labelsSelection],
@@ -191,12 +184,6 @@ export const FlowsTableSidebar = memo<Props>(function FlowsTableSidebar(props) {
 
   const onSourcePodNameClick = useCallback(
     (podSelector: PodSelector) => {
-      const isSelected = podSelection.has(podSelector.pod);
-
-      if (isSelected) {
-        return props.onPodClick?.();
-      }
-
       props.onPodClick?.(podSelector, FilterDirection.From);
     },
     [podSelection, props.flow, props.onPodClick],
@@ -204,12 +191,6 @@ export const FlowsTableSidebar = memo<Props>(function FlowsTableSidebar(props) {
 
   const onDestPodNameClick = useCallback(
     (podSelector: PodSelector) => {
-      const isSelected = podSelection.has(podSelector.pod);
-
-      if (isSelected) {
-        return props.onPodClick?.();
-      }
-
       props.onPodClick?.(podSelector, FilterDirection.To);
     },
     [props.onPodClick, podSelection],
@@ -217,55 +198,42 @@ export const FlowsTableSidebar = memo<Props>(function FlowsTableSidebar(props) {
 
   const onSourceIdentityClick = useCallback(() => {
     const identity = props.flow.sourceIdentity;
-    const isSelected = identitySelection.has(identity!);
-
-    if (identity == null || isSelected) {
-      return props.onIdentityClick?.();
-    }
+    if (identity == null) return;
 
     props.onIdentityClick?.(`${identity}`, FilterDirection.From);
   }, [props.onIdentityClick, props.flow, identitySelection]);
 
   const onDestIdentityClick = useCallback(() => {
     const identity = props.flow.destinationIdentity;
-    const isSelected = identitySelection.has(identity!);
-
-    if (identity == null || isSelected) {
-      return props.onIdentityClick?.();
-    }
+    if (identity == null) return;
 
     props.onIdentityClick?.(`${identity}`, FilterDirection.To);
   }, [props.onIdentityClick, props.flow, identitySelection]);
 
   const onSourceIpClick = useCallback(() => {
     const ip = props.flow.sourceIp;
-    const isSelected = ipSelection.has(ip!);
-
-    if (ip == null || isSelected) {
-      return props.onIpClick?.();
-    }
+    if (ip == null) return;
 
     props.onIpClick?.(ip, FilterDirection.From);
   }, [props.onIpClick, props.flow, ipSelection]);
 
   const onDestIpClick = useCallback(() => {
     const ip = props.flow.destinationIp;
-    const isSelected = ipSelection.has(ip!);
-
-    if (ip == null || isSelected) {
-      return props.onIpClick?.();
-    }
+    if (ip == null) return;
 
     props.onIpClick?.(ip, FilterDirection.To);
   }, [props.onIpClick, props.flow, ipSelection]);
 
   const onDnsClick = useCallback(() => {
-    if (isDnsSelected || props.flow.destinationDns == null) {
-      return props.onDnsClick?.();
-    }
+    const dns = props.flow.destinationDns;
+    if (dns == null) return;
 
-    props.onDnsClick?.(props.flow.destinationDns);
-  }, [props.flow, props.onDnsClick, isDnsSelected]);
+    // The filter that is on may differ in case; pass its text so it toggles off.
+    const on = props.filters.filters?.find(
+      f => f.isDNS && f.query.toLowerCase() === dns.toLowerCase(),
+    );
+    props.onDnsClick?.(on?.query ?? dns);
+  }, [props.flow, props.onDnsClick, props.filters.filters]);
 
   const isICMPProtocol =
     props.flow.protocol === IPProtocol.ICMPv4 || props.flow.protocol === IPProtocol.ICMPv6;
@@ -293,7 +261,16 @@ export const FlowsTableSidebar = memo<Props>(function FlowsTableSidebar(props) {
       {flow.verdict === Verdict.Dropped && (
         <section className={css.block}>
           <span className={css.title}>Drop reason</span>
-          <div className={css.body}>{flow.dropReason}</div>
+          <div className={css.body}>
+            <FilterValue
+              {...filterValue(
+                dropReasonName(flow.dropReasonCode) &&
+                  `drop-reason:${dropReasonName(flow.dropReasonCode)}`,
+              )}
+            >
+              {flow.dropReason}
+            </FilterValue>
+          </div>
         </section>
       )}
       {flow.authType !== AuthType.Disbaled && (
@@ -304,16 +281,40 @@ export const FlowsTableSidebar = memo<Props>(function FlowsTableSidebar(props) {
       )}
       <section className={css.block}>
         <span className={css.title}>Encrypted</span>
-        <div className={css.body}>{flow.isEncrypted ? 'Yes' : 'No'}</div>
+        <div className={css.body}>
+          <FilterValue {...filterValue(`encrypted:${flow.isEncrypted ? 'yes' : 'no'}`)}>
+            {flow.isEncrypted ? 'Yes' : 'No'}
+          </FilterValue>
+        </div>
       </section>
       <section className={css.block}>
         <span className={css.title}>Traffic direction</span>
-        <div className={css.body}>{flow.trafficDirectionLabel}</div>
+        <div className={css.body}>
+          <FilterValue
+            {...filterValue(
+              flow.trafficDirection === TrafficDirection.Unknown
+                ? null
+                : `traffic-direction:${flow.trafficDirectionLabel}`,
+            )}
+          >
+            {flow.trafficDirectionLabel}
+          </FilterValue>
+        </div>
       </section>
       {flow.ciliumEventSubTypeLabel && (
         <section className={css.block}>
           <span className={css.title}>Cilium event type</span>
-          <div className={css.body}>{flow.ciliumEventSubTypeLabel}</div>
+          <div className={css.body}>
+            <FilterValue
+              {...filterValue(
+                flow.ref.eventType?.type === 4
+                  ? `event-type:${flow.ciliumEventSubTypeLabel}`
+                  : null,
+              )}
+            >
+              {flow.ciliumEventSubTypeLabel}
+            </FilterValue>
+          </div>
         </section>
       )}
       {flow.enabledTcpFlags.length > 0 && (
@@ -443,8 +444,25 @@ export const FlowsTableSidebar = memo<Props>(function FlowsTableSidebar(props) {
         <section className={css.block}>
           <span className={css.title}>Destination {!isICMPProtocol && 'port • '}protocol</span>
           <div className={css.body}>
-            {flow.destinationPort && `${flow.destinationPort} • `}
-            {protocol && `${protocol}`}
+            {flow.destinationPort && (
+              <>
+                <FilterValue {...filterValue(`to-port:${flow.destinationPort}`)}>
+                  {flow.destinationPort}
+                </FilterValue>
+                {' • '}
+              </>
+            )}
+            {protocol && (
+              <FilterValue
+                {...filterValue(
+                  protocols.includes(protocol.toLowerCase())
+                    ? `protocol:${protocol.toLowerCase()}`
+                    : null,
+                )}
+              >
+                {protocol}
+              </FilterValue>
+            )}
           </div>
         </section>
       )}

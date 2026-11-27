@@ -20,6 +20,7 @@ export enum Event {
   ShowRemoteNodeChanged = 'show-remote-node-changed',
   ShowPrometheusAppChanged = 'show-prometheus-app-changed',
   HTTPStatusChanged = 'http-status-changed',
+  SinceChanged = 'since-changed',
   FlowFiltersChanged = 'flow-filters-changed',
 }
 
@@ -32,6 +33,7 @@ export type Handlers = {
   [Event.ShowRemoteNodeChanged]: (e: Diff<boolean>) => void;
   [Event.ShowPrometheusAppChanged]: (e: Diff<boolean>) => void;
   [Event.HTTPStatusChanged]: (st: Diff<string>) => void;
+  [Event.SinceChanged]: (st: Diff<string>) => void;
   [Event.FlowFiltersChanged]: (ff: Diff<FilterEntry[]>) => void;
 };
 
@@ -63,6 +65,7 @@ export class Controls extends EventEmitter<Handlers> {
           this.store.applyNamespaceChange(nsDescriptor, change);
         });
       })
+      .onActivity(activity => this.store.namespaces.setActivity(activity))
       .onNotification(notif => {
         // NOTE: This thing updates flow rate and more...
         if (notif.status != null) {
@@ -143,6 +146,13 @@ export class Controls extends EventEmitter<Handlers> {
     this.emit(Event.HTTPStatusChanged, Diff.new(prev).step(st));
   }
 
+  public setSince(since: string | null) {
+    const prev = this.store.controls.setSince(since);
+    if (prev === since) return;
+
+    this.emit(Event.SinceChanged, Diff.new(prev).step(since));
+  }
+
   // NOTE: This should be the only method who is responsible for changing flow filters
   public setFlowFilters(ff: FilterEntry[] | null) {
     const normalized = this.normalizeFilterEntries(ff || []);
@@ -209,6 +219,11 @@ export class Controls extends EventEmitter<Handlers> {
     return this;
   }
 
+  public onSinceChanged(fn: Handlers[Event.SinceChanged]): this {
+    this.on(Event.SinceChanged, fn);
+    return this;
+  }
+
   public onFlowFiltersChanged(fn: Handlers[Event.FlowFiltersChanged]): this {
     this.on(Event.FlowFiltersChanged, fn);
     return this;
@@ -251,6 +266,12 @@ export class Controls extends EventEmitter<Handlers> {
 
     this.onHTTPStatusChanged(diff => {
       const fd = this.store.filtersDiff.tap(d => d.httpStatus.replace(diff));
+
+      this.emit(Event.FiltersChanged, fd);
+    });
+
+    this.onSinceChanged(diff => {
+      const fd = this.store.filtersDiff.tap(d => d.since.replace(diff));
 
       this.emit(Event.FiltersChanged, fd);
     });

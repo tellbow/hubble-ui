@@ -2,12 +2,14 @@ import React from 'react';
 import { observer } from 'mobx-react';
 
 import { Verdict } from '~/domain/hubble';
-import { FilterEntry } from '~/domain/filtering';
+import { FilterEntry, FilterKind } from '~/domain/filtering';
+import type { Suggestion } from '~/domain/filtering/fields';
 import { Status } from '~/domain/status';
 import { TransferState } from '~/domain/interactions';
-import { NamespaceDescriptor } from '~/domain/namespaces';
+import { NamespaceActivity, NamespaceDescriptor } from '~/domain/namespaces';
 
 import { FlowsFilterInput } from './FlowsFilterInput';
+import { TimeRangeDropdown } from './TimeRangeDropdown';
 import { VerdictFilterDropdown } from './VerdictFilterDropdown';
 import { VisualFiltersDropdown } from './VisualFiltersDropdown';
 import { NamespaceSelectorDropdown } from './NamespaceSelectorDropdown';
@@ -23,10 +25,14 @@ export interface Props {
   onNamespaceChange?: (ns: NamespaceDescriptor) => void;
   selectedVerdict: Verdict | null;
   onVerdictChange?: (verdict: Verdict | null) => void;
+  namespaceActivity?: NamespaceActivity | null;
   selectedHttpStatus: string | null;
+  since: string | null;
+  onSinceChange?: (since: string | null) => void;
   onHttpStatusChange?: (httpStatus: string | null) => void;
   flowFilters: FilterEntry[];
   onChangeFlowFilters?: (filters: FilterEntry[]) => void;
+  flowFilterSuggestions?: () => Map<FilterKind, Suggestion[]>;
   showHost: boolean;
   onShowHostToggle?: () => void;
   showKubeDns: boolean;
@@ -42,9 +48,15 @@ export const TopBar = observer(function TopBar(props: Props) {
     <>
       <div className={css.spacer} />
       <div className={css.spacer} />
-      <FlowsFilterInput filters={props.flowFilters} onChange={props.onChangeFlowFilters} />
+      <FlowsFilterInput
+        filters={props.flowFilters}
+        onChange={props.onChangeFlowFilters}
+        suggestions={props.flowFilterSuggestions}
+      />
       <div className={css.spacer} />
       <VerdictFilterDropdown verdict={props.selectedVerdict} onSelect={props.onVerdictChange} />
+      <div className={css.border} />
+      <TimeRangeDropdown since={props.since} onSelect={props.onSinceChange} />
       <div className={css.border} />
       <VisualFiltersDropdown
         showHost={props.showHost}
@@ -65,6 +77,7 @@ export const TopBar = observer(function TopBar(props: Props) {
         {props.currentNamespace === null ? null : (
           <NamespaceSelectorDropdown
             namespaces={props.namespaces}
+            activity={props.namespaceActivity}
             currentNamespace={props.currentNamespace}
             onChange={props.onNamespaceChange}
           />

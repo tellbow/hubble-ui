@@ -188,6 +188,7 @@ export class UILayer {
     this.store.controls.setShowRemoteNode(storageParams.isRemoteNodeShown);
     this.store.controls.setShowPrometheusApp(storageParams.isPrometheusAppShown);
     this.store.controls.setHttpStatus(routeParams.httpStatus);
+    this.store.controls.setSince(routeParams.since);
     this.store.controls.setFlowFilters(routeParams.flowFilters);
     this.store.controls.setVerdicts(routeParams.verdicts);
     this.store.namespaces.setCurrent(routeParams.namespace);

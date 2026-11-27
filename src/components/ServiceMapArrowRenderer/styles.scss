@@ -20,6 +20,13 @@ $hovered-control: #01a4ff;
   stroke: var(--hubble-ui-svcmap-feet-arrow-outer);
 }
 
+.dropsHit {
+  stroke: transparent;
+  stroke-width: 14px;
+  cursor: pointer;
+  pointer-events: stroke;
+}
+
 .arrowHandle {
   fill: var(--hubble-ui-svcmap-arrow-handle);
 }

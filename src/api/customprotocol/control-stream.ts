@@ -6,16 +6,19 @@ import { Notification as PBNotification } from '~backend/proto/ui/notifications_
 
 import * as helpers from '~/domain/helpers';
 import { NamespaceChange } from '~/domain/events';
+import { NamespaceActivity } from '~/domain/namespaces';
 import { Notification } from '~/domain/notifications';
 
 export enum Event {
   NamespaceChanges = 'ns-changes',
   Notification = 'notification',
+  Activity = 'activity',
 }
 
 export type Handlers = {
   [Event.NamespaceChanges]: (nsCh: NamespaceChange[]) => void;
   [Event.Notification]: (n: Notification) => void;
+  [Event.Activity]: (a: NamespaceActivity) => void;
 };
 
 export type Options = StreamOptions & {};
@@ -37,6 +40,11 @@ export class ControlStream extends Stream<Handlers> {
     return this;
   }
 
+  public onActivity(fn: Handlers[Event.Activity]): this {
+    this.on(Event.Activity, fn);
+    return this;
+  }
+
   private setupEventHandlers() {
     this.on(StreamEvent.Message, msg => {
       const resp = uipb.GetControlStreamResponse.fromBinary(msg.body);
@@ -46,6 +54,16 @@ export class ControlStream extends Stream<Handlers> {
           return this.emitNamespaces(resp.event.namespaces);
         case 'notification':
           return this.emitNotification(resp.event.notification);
+        case 'activity':
+          return this.emit(Event.Activity, {
+            counted: resp.event.activity.flowsCounted,
+            byNamespace: new Map(
+              resp.event.activity.namespaces.map(e => [
+                e.namespace,
+                { flows: e.flows, dropped: e.dropped },
+              ]),
+            ),
+          });
         case undefined:
         default:
           return;

@@ -29,6 +29,8 @@ type APIServer struct {
 
 	instance *http.Server
 	router   *router.Router
+
+	activity activityCache
 }
 
 type HttpHandlerMiddleware = func(http.Handler) http.Handler

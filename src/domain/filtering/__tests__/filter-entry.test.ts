@@ -31,58 +31,37 @@ const parse = (
 };
 
 describe('correct strings parsing', () => {
-  parse(
-    'correct 1',
-    'either:ip=127.0.0.1',
-    true,
-    FilterDirection.Either,
-    FilterKind.Ip,
-    '127.0.0.1',
-  );
+  parse('correct 1', 'ip:127.0.0.1', true, FilterDirection.Either, FilterKind.Ip, '127.0.0.1');
 
-  parse('correct 2', 'from:ip=127.0.0.1', true, FilterDirection.From, FilterKind.Ip, '127.0.0.1');
+  parse('correct 2', 'from-ip:127.0.0.1', true, FilterDirection.From, FilterKind.Ip, '127.0.0.1');
 
-  parse('correct 3', 'to:ip=127.0.0.1', true, FilterDirection.To, FilterKind.Ip, '127.0.0.1');
+  parse('correct 3', 'to-ip:127.0.0.1', true, FilterDirection.To, FilterKind.Ip, '127.0.0.1');
 
-  parse(
-    'correct 4',
-    'either:dns=google.com',
-    true,
-    FilterDirection.Either,
-    FilterKind.Dns,
-    'google.com',
-  );
+  parse('correct 4', 'fqdn:google.com', true, FilterDirection.Either, FilterKind.Dns, 'google.com');
 
-  parse(
-    'correct 5',
-    'either:label=app=name',
-    true,
-    FilterDirection.Either,
-    FilterKind.Label,
-    'app=name',
-  );
+  parse('correct 5', 'label:app=name', true, FilterDirection.Either, FilterKind.Label, 'app=name');
 
   parse(
     'correct 6',
-    'from:label=app=name',
+    'from-label:app=name',
     true,
     FilterDirection.From,
     FilterKind.Label,
     'app=name',
   );
 
-  parse('correct 7', 'to:label=app=name', true, FilterDirection.To, FilterKind.Label, 'app=name');
+  parse('correct 7', 'to-label:app=name', true, FilterDirection.To, FilterKind.Label, 'app=name');
 
   parse(
     'correct 8',
-    'from:dns=google.com',
+    'from-fqdn:google.com',
     true,
     FilterDirection.From,
     FilterKind.Dns,
     'google.com',
   );
 
-  parse('correct 9', 'to:dns=127.0.0.1', true, FilterDirection.To, FilterKind.Dns, '127.0.0.1');
+  parse('correct 9', 'to-fqdn:127.0.0.1', true, FilterDirection.To, FilterKind.Dns, '127.0.0.1');
 
   parse('correct 10', 'ip=127.0.0.1', true, FilterDirection.Either, FilterKind.Ip, '127.0.0.1');
 
@@ -94,11 +73,11 @@ describe('correct strings parsing', () => {
 
   parse('correct 14', 'identity=12345', true, FilterDirection.Either, FilterKind.Identity, '12345');
 
-  parse('correct 15', 'from:pod=random', true, FilterDirection.From, FilterKind.Pod, 'random');
+  parse('correct 15', 'from-pod:random', true, FilterDirection.From, FilterKind.Pod, 'random');
 
-  parse('correct 16', 'to:pod=random', true, FilterDirection.To, FilterKind.Pod, 'random');
+  parse('correct 16', 'to-pod:random', true, FilterDirection.To, FilterKind.Pod, 'random');
 
-  parse('correct 17', 'either:pod=random', true, FilterDirection.Either, FilterKind.Pod, 'random');
+  parse('correct 17', 'pod:random', true, FilterDirection.Either, FilterKind.Pod, 'random');
 
   parse('correct 19', 'pod=random', true, FilterDirection.Either, FilterKind.Pod, 'random');
 
@@ -115,7 +94,7 @@ describe('correct strings parsing', () => {
 
   parse(
     'correct 21',
-    'to:workload=ds:app',
+    'to-workload:ds:app',
     true,
     FilterDirection.To,
     FilterKind.Workload,

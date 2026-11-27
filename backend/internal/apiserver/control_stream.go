@@ -57,6 +57,8 @@ func (srv *APIServer) ControlStream(
 	go nsWatcher.Run(ctx)
 	defer nsWatcher.Stop()
 
+	go srv.sendNamespaceActivity(ch, log)
+
 	dataStash := data_stash.New()
 	nsDebounce := debounce.New(100 * time.Millisecond)
 

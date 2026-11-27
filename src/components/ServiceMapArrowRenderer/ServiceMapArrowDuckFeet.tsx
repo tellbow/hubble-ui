@@ -49,8 +49,8 @@ export const ServiceMapArrowDuckFeet = observer(function ServiceMapArrowDuckFeet
         .enter()
         .append('circle')
         .attr('class', 'ending-connector')
-        .attr('fill', colors.connectorFill)
-        .attr('stroke', colors.connectorStroke)
+        .style('fill', colors.connectorFill)
+        .style('stroke', colors.connectorStroke)
         .attr('stroke-width', sizes.connectorWidth)
         .attr('r', 7.5)
         .attr('cx', d => d.x)
@@ -91,6 +91,16 @@ export const ServiceMapArrowDuckFeet = observer(function ServiceMapArrowDuckFeet
         .selectAll<SVGTextElement, AccessPointArrow>('text.padlock')
         .data(apArrows, arr => `padlock-${arr.id}-${Array.from(arr.verdicts).join(',')}`);
 
+      // NOTE: Wide invisible lines over red ones: a click shows their drops
+      // NOTE: (ServiceMapApp handles it through `data-drops-to`)
+      const dropsHitLines = d3
+        .select(innerArrowsElem)
+        .selectAll<SVGLineElement, AccessPointArrow>('line.' + css.dropsHit)
+        .data(
+          apArrows.filter(a => a.hasAbnormalVerdict && a.receiverId != null),
+          arr => `drops-${arr.id}`,
+        );
+
       // console.log(backgroundLines, foregroundLines, apArrows);
       backgroundLines.call(helpers.innerArrows.setBeginningAndEndCoords);
       foregroundLines.call(helpers.innerArrows.setBeginningAndEndCoords);
@@ -106,11 +116,21 @@ export const ServiceMapArrowDuckFeet = observer(function ServiceMapArrowDuckFeet
         .enter()
         .append('line')
         .attr('class', 'inner')
-        .attr('stroke', helpers.innerArrows.strokeColor)
+        .style('stroke', helpers.innerArrows.strokeColor)
         .attr('stroke-width', helpers.innerArrows.strokeWidth)
         .attr('stroke-dasharray', helpers.innerArrows.strokeStyle)
         .attr('stroke-linecap', 'round')
         .call(helpers.innerArrows.setBeginningAndEndCoords);
+
+      dropsHitLines.call(helpers.innerArrows.setBeginningAndEndCoords);
+      dropsHitLines
+        .enter()
+        .append('line')
+        .attr('class', css.dropsHit)
+        .attr('data-drops-to', a => a.receiverId!)
+        .call(helpers.innerArrows.setBeginningAndEndCoords)
+        .append('title')
+        .text('Show the dropped flows');
 
       const padlockTooltip = d3
         .select('body')
@@ -134,7 +154,7 @@ export const ServiceMapArrowDuckFeet = observer(function ServiceMapArrowDuckFeet
         .attr('class', 'padlock')
         .attr('title', 'Mutual auth enabled')
         .attr('font-family', 'blueprint-icons-16')
-        .attr('color', a => (a.isEncrypted ? colors.padlockGreen : colors.feetNeutralStroke))
+        .style('color', a => (a.isEncrypted ? colors.padlockGreen : colors.feetNeutralStroke))
         .attr('x', arrow => arrow.end!.x - 8)
         .attr('y', arrow => arrow.end!.y - 20)
         .text((arrow: AccessPointArrow) => (arrow.hasAuth ? '\uf232' : ''))
@@ -151,6 +171,7 @@ export const ServiceMapArrowDuckFeet = observer(function ServiceMapArrowDuckFeet
       backgroundLines.exit().remove();
       foregroundLines.exit().remove();
       padlocks.exit().remove();
+      dropsHitLines.exit().remove();
     },
     [],
   );

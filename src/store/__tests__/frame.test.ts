@@ -3119,12 +3119,12 @@ describe('filter entries > world', () => {
     expect(svcs.length).toBe(2);
   });
 
-  test('test 28 - from + to world (link regular -> world)', () => {
+  test('test 28 - either world (was from + to) (link regular -> world)', () => {
     const filterObj = {
       namespace: null,
       verdict: null,
       httpStatus: null,
-      filters: [filterEntries.fromLabelWorld!, filterEntries.toLabelWorld!],
+      filters: [filterEntries.eitherLabelWorld!],
       skipHost: false,
       skipKubeDns: false,
       skipRemoteNode: false,
@@ -3158,12 +3158,12 @@ describe('filter entries > world', () => {
     expect(svcs.length).toBe(2);
   });
 
-  test('test 29 - from + to world (link world -> regular)', () => {
+  test('test 29 - either world (was from + to) (link world -> regular)', () => {
     const filterObj = {
       namespace: null,
       verdict: null,
       httpStatus: null,
-      filters: [filterEntries.fromLabelWorld!, filterEntries.toLabelWorld!],
+      filters: [filterEntries.eitherLabelWorld!],
       skipHost: false,
       skipKubeDns: false,
       skipRemoteNode: false,
@@ -3197,12 +3197,12 @@ describe('filter entries > world', () => {
     expect(svcs.length).toBe(2);
   });
 
-  test('test 30 - from + to world (link world -> host)', () => {
+  test('test 30 - either world (was from + to) (link world -> host)', () => {
     const filterObj = {
       namespace: null,
       verdict: null,
       httpStatus: null,
-      filters: [filterEntries.fromLabelWorld!, filterEntries.toLabelWorld!],
+      filters: [filterEntries.eitherLabelWorld!],
       skipHost: false,
       skipKubeDns: false,
       skipRemoteNode: false,
@@ -3236,12 +3236,12 @@ describe('filter entries > world', () => {
     expect(svcs.length).toBe(2);
   });
 
-  test('test 31 - from + to world (link host -> world)', () => {
+  test('test 31 - either world (was from + to) (link host -> world)', () => {
     const filterObj = {
       namespace: null,
       verdict: null,
       httpStatus: null,
-      filters: [filterEntries.fromLabelWorld!, filterEntries.toLabelWorld!],
+      filters: [filterEntries.eitherLabelWorld!],
       skipHost: false,
       skipKubeDns: false,
       skipRemoteNode: false,
@@ -3275,12 +3275,12 @@ describe('filter entries > world', () => {
     expect(svcs.length).toBe(2);
   });
 
-  test('test 32 - from + to world (link world -> host, host is skipped)', () => {
+  test('test 32 - either world (was from + to) (link world -> host, host is skipped)', () => {
     const filterObj = {
       namespace: null,
       verdict: null,
       httpStatus: null,
-      filters: [filterEntries.fromLabelWorld!, filterEntries.toLabelWorld!],
+      filters: [filterEntries.eitherLabelWorld!],
       skipHost: true,
       skipKubeDns: false,
       skipRemoteNode: false,
@@ -3314,12 +3314,12 @@ describe('filter entries > world', () => {
     expect(svcs.length).toBe(0);
   });
 
-  test('test 33 - from + to world (KubeDNS, RemoteNode)', () => {
+  test('test 33 - either world (was from + to) (KubeDNS, RemoteNode)', () => {
     const filterObj = {
       namespace: null,
       verdict: null,
       httpStatus: null,
-      filters: [filterEntries.fromLabelWorld!, filterEntries.toLabelWorld!],
+      filters: [filterEntries.eitherLabelWorld!],
       skipHost: false,
       skipKubeDns: false,
       skipRemoteNode: false,
@@ -3386,12 +3386,12 @@ describe('filter entries > world', () => {
     expect(svcs.length).toBe(2);
   });
 
-  test('test 34 - from + to world (KubeDNS, RemoteNode, skip KubeDNS)', () => {
+  test('test 34 - either world (was from + to) (KubeDNS, RemoteNode, skip KubeDNS)', () => {
     const filterObj = {
       namespace: null,
       verdict: null,
       httpStatus: null,
-      filters: [filterEntries.fromLabelWorld!, filterEntries.toLabelWorld!],
+      filters: [filterEntries.eitherLabelWorld!],
       skipHost: false,
       skipKubeDns: true,
       skipRemoteNode: false,
@@ -3458,12 +3458,12 @@ describe('filter entries > world', () => {
     expect(svcs.length).toBe(2);
   });
 
-  test('test 35 - from + to world (KubeDNS, RemoteNode, skip RemoteNode)', () => {
+  test('test 35 - either world (was from + to) (KubeDNS, RemoteNode, skip RemoteNode)', () => {
     const filterObj = {
       namespace: null,
       verdict: null,
       httpStatus: null,
-      filters: [filterEntries.fromLabelWorld!, filterEntries.toLabelWorld!],
+      filters: [filterEntries.eitherLabelWorld!],
       skipHost: false,
       skipKubeDns: false,
       skipRemoteNode: true,
@@ -3530,12 +3530,12 @@ describe('filter entries > world', () => {
     expect(svcs.length).toBe(2);
   });
 
-  test('test 36 - from + to world (KubeDNS, RemoteNode, skip either)', () => {
+  test('test 36 - either world (was from + to) (KubeDNS, RemoteNode, skip either)', () => {
     const filterObj = {
       namespace: null,
       verdict: null,
       httpStatus: null,
-      filters: [filterEntries.fromLabelWorld!, filterEntries.toLabelWorld!],
+      filters: [filterEntries.eitherLabelWorld!],
       skipHost: false,
       skipKubeDns: true,
       skipRemoteNode: true,
@@ -3741,12 +3741,12 @@ describe('filter entries > DNS', () => {
     expect(svcs.length).toBe(2);
   });
 
-  test('test 4 - regular -> apiTwitter (from + to filters)', () => {
+  test('test 4 - regular -> apiTwitter (either filter, was from + to)', () => {
     const filterObj = {
       namespace: null,
       verdict: null,
       httpStatus: null,
-      filters: [filterEntries.fromDnsTwitterApi!, filterEntries.toDnsTwitterApi!],
+      filters: [filterEntries.eitherDnsTwitterApi!],
       skipHost: false,
       skipKubeDns: false,
       skipRemoteNode: false,
@@ -4131,12 +4131,12 @@ describe('filter entries > DNS', () => {
     expect(svcs.length).toBe(3);
   });
 
-  test('test 10 - regular <-> apiTwitter, apiTwitter <-> regular2 (from + to filters)', () => {
+  test('test 10 - regular <-> apiTwitter, apiTwitter <-> regular2 (either filter, was from + to)', () => {
     const filterObj = {
       namespace: null,
       verdict: null,
       httpStatus: null,
-      filters: [filterEntries.fromDnsTwitterApi!, filterEntries.toDnsTwitterApi!],
+      filters: [filterEntries.eitherDnsTwitterApi!],
       skipHost: false,
       skipKubeDns: false,
       skipRemoteNode: false,
@@ -4191,12 +4191,12 @@ describe('filter entries > DNS', () => {
     expect(svcs.length).toBe(3);
   });
 
-  test('test 11 - regular -> apiTwitter, apiTwitter -> regular2 (from + to filters)', () => {
+  test('test 11 - regular -> apiTwitter, apiTwitter -> regular2 (either filter, was from + to)', () => {
     const filterObj = {
       namespace: null,
       verdict: null,
       httpStatus: null,
-      filters: [filterEntries.fromDnsTwitterApi!, filterEntries.toDnsTwitterApi!],
+      filters: [filterEntries.eitherDnsTwitterApi!],
       skipHost: false,
       skipKubeDns: false,
       skipRemoteNode: false,
@@ -4396,7 +4396,7 @@ describe('filter entries > DNS', () => {
     expect(svcs.length).toBe(0);
   });
 
-  test('test 14 - regular <-> regular2 (from + to filters)', () => {
+  test('test 14 - regular <-> regular2 (either filter, was from + to)', () => {
     const filterObj = {
       namespace: null,
       verdict: null,
@@ -4790,12 +4790,12 @@ describe('filter entries > pod (only flows)', () => {
     expect(svcs.length).toBe(0);
   });
 
-  test('test 10 - from/to sender pod filter (flows from <-> to)', () => {
+  test('test 10 - either sender pod filter (was from/to) (flows from <-> to)', () => {
     const filterObj = {
       namespace: null,
       verdict: null,
       httpStatus: null,
-      filters: [fromSenderPod, toSenderPod],
+      filters: [eitherSenderPod],
       skipHost: false,
       skipKubeDns: false,
       skipRemoteNode: false,
@@ -4822,12 +4822,12 @@ describe('filter entries > pod (only flows)', () => {
     expect(svcs.length).toBe(0);
   });
 
-  test('test 11 - from/to sender pod filter (one flow to <-> from)', () => {
+  test('test 11 - either sender pod filter (was from/to) (one flow to <-> from)', () => {
     const filterObj = {
       namespace: null,
       verdict: null,
       httpStatus: null,
-      filters: [fromSenderPod, toSenderPod],
+      filters: [eitherSenderPod],
       skipHost: false,
       skipKubeDns: false,
       skipRemoteNode: false,
@@ -4854,12 +4854,12 @@ describe('filter entries > pod (only flows)', () => {
     expect(svcs.length).toBe(0);
   });
 
-  test('test 12 - from/to sender pod filter (flows regular <-> world mixed in)', () => {
+  test('test 12 - either sender pod filter (was from/to) (flows regular <-> world mixed in)', () => {
     const filterObj = {
       namespace: null,
       verdict: null,
       httpStatus: null,
-      filters: [fromSenderPod, toSenderPod],
+      filters: [eitherSenderPod],
       skipHost: false,
       skipKubeDns: false,
       skipRemoteNode: false,
@@ -5226,12 +5226,12 @@ describe('filter entries > pod (only flows)', () => {
     expect(svcs.length).toBe(0);
   });
 
-  test('test 22 - from/to receiver pod filter (flows from <-> to)', () => {
+  test('test 22 - either receiver pod filter (was from/to) (flows from <-> to)', () => {
     const filterObj = {
       namespace: null,
       verdict: null,
       httpStatus: null,
-      filters: [fromReceiverPod, toReceiverPod],
+      filters: [eitherReceiverPod],
       skipHost: false,
       skipKubeDns: false,
       skipRemoteNode: false,
@@ -5258,12 +5258,12 @@ describe('filter entries > pod (only flows)', () => {
     expect(svcs.length).toBe(0);
   });
 
-  test('test 23 - from/to receiver pod filter (one flow to <-> from)', () => {
+  test('test 23 - either receiver pod filter (was from/to) (one flow to <-> from)', () => {
     const filterObj = {
       namespace: null,
       verdict: null,
       httpStatus: null,
-      filters: [fromReceiverPod, toReceiverPod],
+      filters: [eitherReceiverPod],
       skipHost: false,
       skipKubeDns: false,
       skipRemoteNode: false,
@@ -5290,12 +5290,12 @@ describe('filter entries > pod (only flows)', () => {
     expect(svcs.length).toBe(0);
   });
 
-  test('test 24 - from/to receiver pod filter (flows regular <-> world mixed in)', () => {
+  test('test 24 - either receiver pod filter (was from/to) (flows regular <-> world mixed in)', () => {
     const filterObj = {
       namespace: null,
       verdict: null,
       httpStatus: null,
-      filters: [fromReceiverPod, toReceiverPod],
+      filters: [eitherReceiverPod],
       skipHost: false,
       skipKubeDns: false,
       skipRemoteNode: false,
@@ -5333,5 +5333,43 @@ describe('filter entries > pod (only flows)', () => {
     expect(flows.length).toBe(2);
     expect(links.length).toBe(0);
     expect(svcs.length).toBe(0);
+  });
+});
+
+describe('filter entries against links', () => {
+  test('a link stays only if a filtered flow went along it', () => {
+    const { regular, host, world } = tsvcs;
+    const filterObj = {
+      namespace: null,
+      verdict: null,
+      httpStatus: null,
+      // to-port passes every card, so the label decides which links stay
+      filters: FilterEntry.parseMany('to-port:8080 to-label:k8s:k8s-app=regular-service'),
+      skipHost: false,
+      skipKubeDns: false,
+      skipRemoteNode: false,
+      skipPrometheusApp: false,
+    };
+
+    const toRegular = thelpers.flowsFromToService(host, regular).tcp(54000, 8080).forwarded();
+    const toHost = thelpers.flowsFromToService(world, host).tcp(54000, 8080).forwarded();
+
+    const rhs = prepareFrame(
+      [new ServiceCard(regular), new ServiceCard(host), new ServiceCard(world)],
+      [toRegular.fromAtoB, toHost.fromAtoB].map(f => new Flow(f)),
+      [
+        Link.fromHubbleLink(thelpers.linkFromToService(host, regular).tcp(8080).forwarded()),
+        Link.fromHubbleLink(thelpers.linkFromToService(world, host).tcp(8080).forwarded()),
+      ],
+      filterObj,
+    );
+
+    const lhs = prepareFrame([], [], [], filterObj);
+    lhs.applyFrame(rhs, Filters.fromObject(filterObj));
+    const { flows, links, svcs } = extractData(lhs);
+
+    expect(flows.length).toBe(1);
+    expect(links.map(l => [l.sourceId, l.destinationId])).toEqual([[host.id, regular.id]]);
+    expect(svcs.map(s => s.id).sort()).toEqual([host.id, regular.id].sort());
   });
 });

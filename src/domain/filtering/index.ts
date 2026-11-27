@@ -3,7 +3,7 @@ import { FilterEntry, Kind as FilterKind, Direction as FilterDirection } from '.
 
 import { Link, ServiceCard } from '~/domain/service-map';
 import { LinkConnections } from '~/domain/interactions/connections';
-import { Filters } from './filters';
+import { Filters, TimeRanges } from './filters';
 import type { FiltersObject, FiltersKey } from './filters';
 
 import { filterFlow, filterFlowByEntry } from './filter-flow';
@@ -11,7 +11,7 @@ import { filterLink, filterLinkByEntry } from './filter-link';
 import { filterService, filterServiceByEntry } from './filter-service';
 import { FiltersDiff } from './filters-diff';
 
-export { Filters };
+export { Filters, TimeRanges };
 export type { FiltersObject, FiltersKey };
 export { FilterEntry, FilterKind, FilterDirection };
 export { filterFlow, filterFlowByEntry };
@@ -45,6 +45,20 @@ export const filter = (
 
     filteredFlows.push(f);
   });
+
+  // A link knows only its two ends, so its own check lets most entries pass;
+  // with entries set, keep only links between identities a filtered flow
+  // connects, as the service map built from relay's filtered flows does.
+  // shortcut: by identity pair, not port; a pair talking on two ports keeps
+  // both arrows when a flow on one of them passes.
+  const crossed = filters.filters?.length
+    ? new Set(
+        filteredFlows.map(
+          f => `${f.ref.source?.identity ?? 0}>${f.ref.destination?.identity ?? 0}`,
+        ),
+      )
+    : null;
+  const identityOf = (cardId: string) => cardsMap.get(cardId)?.service.identity ?? 0;
 
   const blacklistServices: Set<string> = new Set();
   const blacklistLinks: Set<string> = new Set();
@@ -112,7 +126,10 @@ export const filter = (
       links.forEach(link => {
         if (blacklistLinks.has(link.id)) return;
 
-        const passed = filterLink(link, filters);
+        const passed =
+          filterLink(link, filters) &&
+          (crossed == null ||
+            crossed.has(`${identityOf(link.sourceId)}>${identityOf(link.destinationId)}`));
         if (!passed) {
           blacklistLinks.add(link.id);
           return;

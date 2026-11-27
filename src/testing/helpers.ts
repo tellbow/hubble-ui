@@ -115,7 +115,7 @@ export const flowsBetweenServices = (a: HubbleService, b: HubbleService): FlowsB
     },
     source: {
       id: 0,
-      identity: 0,
+      identity: a.identity,
       labels: a.labels.map(kv => `${kv.key}=${kv.value}`),
       workloads: [],
       namespace: a.namespace,
@@ -123,7 +123,7 @@ export const flowsBetweenServices = (a: HubbleService, b: HubbleService): FlowsB
     },
     destination: {
       id: 1,
-      identity: 1,
+      identity: b.identity,
       labels: b.labels.map(kv => `${kv.key}=${kv.value}`),
       workloads: [],
       namespace: b.namespace,
@@ -151,7 +151,7 @@ export const flowsBetweenServices = (a: HubbleService, b: HubbleService): FlowsB
     },
     source: {
       id: 1,
-      identity: 1,
+      identity: b.identity,
       labels: b.labels.map(kv => `${kv.key}=${kv.value}`),
       workloads: [],
       namespace: b.namespace,
@@ -159,7 +159,7 @@ export const flowsBetweenServices = (a: HubbleService, b: HubbleService): FlowsB
     },
     destination: {
       id: 0,
-      identity: 0,
+      identity: a.identity,
       labels: a.labels.map(kv => `${kv.key}=${kv.value}`),
       workloads: [],
       namespace: a.namespace,
@@ -201,7 +201,7 @@ export const flowsFromToService = (from: HubbleService, to: HubbleService) => {
       },
       source: {
         id: 0,
-        identity: 0,
+        identity: from.identity,
         labels: from.labels.map(kv => `${kv.key}=${kv.value}`),
         workloads: [],
         namespace: from.namespace,
@@ -209,7 +209,7 @@ export const flowsFromToService = (from: HubbleService, to: HubbleService) => {
       },
       destination: {
         id: 1,
-        identity: 1,
+        identity: to.identity,
         labels: to.labels.map(kv => `${kv.key}=${kv.value}`),
         workloads: [],
         namespace: to.namespace,
@@ -235,7 +235,7 @@ export const flowsFromToService = (from: HubbleService, to: HubbleService) => {
       },
       source: {
         id: 1,
-        identity: 1,
+        identity: to.identity,
         labels: to.labels.map(kv => `${kv.key}=${kv.value}`),
         workloads: [],
         namespace: to.namespace,
@@ -243,7 +243,7 @@ export const flowsFromToService = (from: HubbleService, to: HubbleService) => {
       },
       destination: {
         id: 0,
-        identity: 0,
+        identity: from.identity,
         labels: from.labels.map(kv => `${kv.key}=${kv.value}`),
         workloads: [],
         namespace: from.namespace,

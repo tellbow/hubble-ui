@@ -64,8 +64,8 @@ export class Application<RenderResult = any> extends EventEmitter<Handlers> {
     return result;
   }
 
-  // NOTE: Put part of theme controlling here since we only support light theme
-  // for now.
+  // NOTE: The theme follows the system's light or dark setting, also when it
+  // changes while the page is open.
   private applyTheme() {
     const html = document.documentElement;
     const body = document.querySelector('body');
@@ -74,9 +74,16 @@ export class Application<RenderResult = any> extends EventEmitter<Handlers> {
       return;
     }
 
-    const themeClass = 'light';
+    const dark = window.matchMedia?.('(prefers-color-scheme: dark)');
+    const apply = () => {
+      const theme = dark?.matches ? 'dark' : 'light';
+      const other = theme === 'dark' ? 'light' : 'dark';
 
-    html.classList.add(`${themeClass}`);
-    body.classList.add(`bp6-${themeClass}`);
+      html.classList.replace(other, theme) || html.classList.add(theme);
+      body.classList.replace(`bp6-${other}`, `bp6-${theme}`) || body.classList.add(`bp6-${theme}`);
+    };
+
+    apply();
+    dark?.addEventListener?.('change', apply);
   }
 }

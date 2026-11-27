@@ -66,4 +66,16 @@ describe('extract app name', () => {
 
     appNameTest(['k8s:app.kubernetes.io/name=EXPECTED_NAME'], 'EXPECTED_NAME');
   });
+
+  test('not from namespace or policy labels', () => {
+    const client = [
+      'k8s:io.cilium.k8s.namespace.labels.kubernetes.io/metadata.name=demo',
+      'k8s:io.cilium.k8s.policy.cluster=default',
+      'k8s:io.cilium.k8s.policy.serviceaccount=default',
+      'k8s:io.kubernetes.pod.namespace=demo',
+    ];
+    appNameTest(client, null);
+    appNameTest([...client, 'k8s:run=client'], 'client');
+    expect(Labels.detect(client.map(l => Labels.toKV(l))).appName).toBeUndefined();
+  });
 });

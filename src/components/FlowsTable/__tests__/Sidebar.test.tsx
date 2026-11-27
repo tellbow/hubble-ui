@@ -168,10 +168,6 @@ describe('Sidebar DNS filter selection', () => {
     expect(dns).toBeDefined();
     expect(dns!.classList.contains('selected')).toBe(selected);
     fireEvent.click(dns!);
-    if (selected) {
-      expect(onDnsClick).toHaveBeenCalledWith();
-    } else {
-      expect(onDnsClick).toHaveBeenCalledWith('Api.Example.COM');
-    }
+    expect(onDnsClick).toHaveBeenCalledWith(selected ? query : 'Api.Example.COM');
   });
 });

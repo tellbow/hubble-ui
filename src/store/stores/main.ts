@@ -52,6 +52,7 @@ export class Store {
       namespace: this.namespaces.current?.namespace,
       verdicts: this.controls.verdicts,
       httpStatus: this.controls.httpStatus,
+      since: this.controls.since,
       filters: this.controls.flowFilters,
       skipHost: !this.controls.showHost,
       skipKubeDns: !this.controls.showKubeDns,

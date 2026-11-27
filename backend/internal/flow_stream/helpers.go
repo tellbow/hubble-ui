@@ -82,6 +82,11 @@ func ExtractFlowsRequest(
 		}
 	}
 
+	// The UI's time range wins over the deployment's default.
+	if req.GetSince() != nil {
+		request.Since = req.GetSince()
+	}
+
 	return &request
 }
 

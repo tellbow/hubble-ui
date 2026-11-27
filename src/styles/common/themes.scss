@@ -83,6 +83,11 @@
   --hubble-ui-svcmap-traffic-dropped: #c50000;
   --hubble-ui-svcmap-feet-arrow-outer: #ebeef0;
   --hubble-ui-svcmap-arrow-handle: #acb1b8;
+  --hubble-ui-svcmap-arrow-stroke: #acb1b8;
+  --hubble-ui-svcmap-start-plate: #b4b4b4;
+  --hubble-ui-svcmap-connector-fill: #aeb7c0;
+  --hubble-ui-svcmap-connector-stroke: #58626d;
+  --hubble-ui-svcmap-feet-neutral: #c1c8d0;
 
   /* Card */
   --hubble-ui-card-boxshadow: none;
@@ -120,4 +125,125 @@
   --hubble-ui-svcmap-card-httpendpt-connector-circle-outer: var(--hubble-ui-color-purple);
   --hubble-ui-svcmap-card-httpendpt-connector-circle-inner: #d6c1ff;
   --hubble-ui-svcmap-card-httpendpt-connector-method: var(--hubble-ui-color-purple);
+
+  /* Shared | added for the dark theme */
+  --hubble-ui-divider: #eaeef1;
+  --hubble-ui-panel-bg: #f6f6f6;
+  --hubble-ui-row-active: #9fb0be;
+  --hubble-ui-text-orange: #d17a31;
+  --hubble-ui-text-blue: #147fbc;
+  --hubble-ui-map-bg-solid: #f0f4f8;
+  --hubble-ui-ns-backplate-bg: #ebeef0;
+  --hubble-ui-ns-backplate-border: #9ba1a8;
+  --hubble-ui-ns-backplate-text: #58626d;
+  --hubble-ui-svcmap-card-port-active: #7129ba;
+}
+
+// Same variables as light-theme, for `prefers-color-scheme: dark`.
+@mixin dark-theme {
+  color-scheme: dark;
+
+  --hubble-ui-color-white: #fff;
+  --hubble-ui-color-black: #000;
+  --hubble-ui-color-green: #72ca9b;
+  --hubble-ui-color-blue: #8abbff;
+  --hubble-ui-color-red: #fa999c;
+  --hubble-ui-color-purple: #c49bff;
+  --hubble-ui-background: #1c2127;
+  --hubble-ui-background-secondary: #252a31;
+  --hubble-ui-background-secondary-selected: #2f3d4d;
+  --hubble-ui-background-secondary-hover: #2a3038;
+  --hubble-ui-background-tertiary-1: #1a1e24;
+  --hubble-ui-background-tertiary-2: #14171b;
+  --hubble-ui-border: #404854;
+  --hubble-ui-border-selected: #4b5563;
+  --hubble-ui-text-primary: #f6f7f9;
+  --hubble-ui-text-secondary: #abb3bf;
+  --hubble-ui-text-tertiary: #8f99a8;
+  --hubble-ui-text-green: #72ca9b;
+  --hubble-ui-text-red: #fa999c;
+  --hubble-ui-verdict-dropped: var(--hubble-ui-color-red);
+  --hubble-ui-verdict-forwarded: var(--hubble-ui-color-green);
+  --hubble-ui-status-circle-green-light: #77d31b;
+  --hubble-ui-status-circle-green-dark: #5cb800;
+  --hubble-ui-status-circle-red-light: #ff3c3c;
+  --hubble-ui-status-circle-red-dark: #e40000;
+  --hubble-ui-connectionindicator-label: #abb3bf;
+  --hubble-ui-connectionindicator-flows-nodes-label: #abb3bf;
+  --hubble-ui-connectionindicator-color-idle: #5f6b7c;
+  --hubble-ui-connectionindicator-color-receiving: #71bd25;
+  --hubble-ui-connectionindicator-color-reconnecting: #71bd25;
+  --hubble-ui-connectionindicator-color-stopped: #71bd25;
+  --hubble-ui-statuscenterhandle-border: var(--hubble-ui-border);
+  --hubble-ui-statuscenterhandle-caption: var(--hubble-ui-text-primary);
+  --hubble-ui-statuscenterhandle-critical-bg: #8e292c;
+  --hubble-ui-statuscenterhandle-critical-border: #ac2f33;
+  --hubble-ui-statuscenterhandle-critical-text: #fff7f7;
+  --hubble-ui-statuscenterwindow-bg: #252a31;
+  --hubble-ui-statuscenterwindow-title: var(--hubble-ui-text-secondary);
+  --hubble-ui-statuscenterwindow-no-entries: var(--hubble-ui-text-tertiary);
+  --hubble-ui-statuscenterwindow-logentry-bg: #2d3f52;
+  --hubble-ui-statuscenterwindow-logentry-icon-bg: #2d3f52;
+  --hubble-ui-statuscenterwindow-intent-none-bg: #2a3038;
+  --hubble-ui-statuscenterwindow-intent-none-border: #5f6b7c;
+  --hubble-ui-statuscenterwindow-intent-none: #abb3bf;
+  --hubble-ui-statuscenterwindow-intent-critical-bg: #3a2224;
+  --hubble-ui-statuscenterwindow-intent-critical-error-highlight-bg: #45282a;
+  --hubble-ui-statuscenterwindow-intent-critical-border: #8e292c;
+  --hubble-ui-statuscenterwindow-intent-critical: #fa999c;
+  --hubble-ui-statuscenterwindow-component-bg: #234;
+  --hubble-ui-statuscenterwindow-component-border: #4b5563;
+  --hubble-ui-statuscenterwindow-component: var(--hubble-ui-text-tertiary);
+  --hubble-ui-map-bg: linear-gradient(
+    180deg,
+    var(--hubble-ui-background-tertiary-1) 0%,
+    var(--hubble-ui-background-tertiary-2) 100%
+  );
+  --hubble-ui-svcmap-boxshadow: inset 0 0 23px rgb(0 0 0 / 40%);
+  --hubble-ui-svcmap-traffic-forwarded: #31a413;
+  --hubble-ui-svcmap-traffic-dropped: #e5484d;
+  --hubble-ui-svcmap-feet-arrow-outer: #2f343c;
+  --hubble-ui-svcmap-arrow-handle: #738091;
+  --hubble-ui-svcmap-arrow-stroke: #8f99a8;
+  --hubble-ui-svcmap-start-plate: #8f99a8;
+  --hubble-ui-svcmap-connector-fill: #5f6b7c;
+  --hubble-ui-svcmap-connector-stroke: #c5cbd3;
+  --hubble-ui-svcmap-feet-neutral: #738091;
+  --hubble-ui-card-boxshadow: none;
+  --hubble-ui-card-boxshadow-hover: #{$pt-elevation-shadow-3};
+  --hubble-ui-card-boxshadow-active: #{$pt-elevation-shadow-1};
+  --hubble-ui-svcmap-card-bg-primary: rgb(37 42 49 / 92%);
+  --hubble-ui-svcmap-card-bg-primary-active: rgb(37 42 49 / 80%);
+  --hubble-ui-svcmap-card-bg-secondary: #2a3038;
+  --hubble-ui-svcmap-card-httpendpt-bg: #252a31;
+  --hubble-ui-svcmap-card-label-bg: #383e47;
+  --hubble-ui-svcmap-card-nozzle-bg: #2f343c;
+  --hubble-ui-svcmap-card-border: #5f6b7c;
+  --hubble-ui-svcmap-card-container-border: #404854;
+  --hubble-ui-svcmap-card-divider: #383e47;
+  --hubble-ui-svcmap-card-text-primary: #f6f7f9;
+  --hubble-ui-svcmap-card-label-text: #abb3bf;
+  --hubble-ui-svcmap-card-endpt-title: #f6f7f9;
+  --hubble-ui-svcmap-card-endpt-subtitle: #8f99a8;
+  --hubble-ui-svcmap-card-endpt-connectors-border: #383e47;
+  --hubble-ui-svcmap-card-endpt-connectors-active: #8abbff;
+  --hubble-ui-svcmap-card-port: #abb3bf;
+  --hubble-ui-svcmap-card-protocol: #f6f7f9;
+  --hubble-ui-svcmap-card-dot-bg: #5f6b7c;
+  --hubble-ui-svcmap-card-endpoints-limit: #8f99a8;
+  --hubble-ui-svcmap-card-httpendpt-border: #404854;
+  --hubble-ui-svcmap-card-httpendpt-connector-circle-border: var(--hubble-ui-color-purple);
+  --hubble-ui-svcmap-card-httpendpt-connector-circle-outer: var(--hubble-ui-color-purple);
+  --hubble-ui-svcmap-card-httpendpt-connector-circle-inner: #4a3a6b;
+  --hubble-ui-svcmap-card-httpendpt-connector-method: var(--hubble-ui-color-purple);
+  --hubble-ui-divider: #383e47;
+  --hubble-ui-panel-bg: #22272e;
+  --hubble-ui-row-active: #3d5a80;
+  --hubble-ui-text-orange: #ec9a3c;
+  --hubble-ui-text-blue: #8abbff;
+  --hubble-ui-map-bg-solid: #111418;
+  --hubble-ui-ns-backplate-bg: #22272e;
+  --hubble-ui-ns-backplate-border: #5f6b7c;
+  --hubble-ui-ns-backplate-text: #abb3bf;
+  --hubble-ui-svcmap-card-port-active: #c49bff;
 }

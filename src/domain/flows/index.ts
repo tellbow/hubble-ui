@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import type { Flow as PbFlow } from '~backend/proto/flow/flow_pb';
 
 import urlParse from 'url-parse';
 
@@ -36,6 +37,8 @@ export type { HubbleFlow, TCPFlags };
 export class Flow {
   private _id?: string;
   public ref: HubbleFlow;
+  // The flow as relay sent it, for exporting it in Hubble's own format.
+  public pb?: PbFlow;
 
   constructor(flow: HubbleFlow, flowId?: string) {
     this.ref = flow;
@@ -56,7 +59,10 @@ export class Flow {
   }
 
   public clone(): Flow {
-    return new Flow(_.cloneDeep(this.ref));
+    const flow = new Flow(_.cloneDeep(this.ref));
+    flow.pb = this.pb;
+
+    return flow;
   }
 
   public senderHasLabelArray(label: [string, string]): boolean {

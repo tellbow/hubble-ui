@@ -245,6 +245,21 @@ export class ServiceCard extends AbstractCard {
     return this.service.dnsNames[0];
   }
 
+  // What a world card stands for, so two world cards can be told apart: its
+  // DNS names, else its most specific CIDR (older Cilium labels every prefix).
+  @computed
+  public get worldDetails(): string | null {
+    if (!this.isWorld) return null;
+    if (this.service.dnsNames.length > 0) return this.service.dnsNames.join(', ');
+
+    const cidrs = this.labels
+      .filter(l => l.key.startsWith('cidr:'))
+      .map(l => l.key.slice('cidr:'.length))
+      .sort((a, b) => Number(b.split('/')[1]) - Number(a.split('/')[1]));
+
+    return cidrs[0] ?? null;
+  }
+
   public get labels(): Array<KV> {
     return this.service.labels;
   }

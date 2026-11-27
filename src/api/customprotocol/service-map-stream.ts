@@ -223,6 +223,7 @@ export class ServiceMapStream extends Stream<Handlers> {
     const flows = pbFlows.map(pbFlow => {
       const hubbleFlow = helpers.flows.hubbleFlowFromPb(pbFlow);
       const flow = new Flow(hubbleFlow);
+      flow.pb = pbFlow;
 
       return flow;
     });

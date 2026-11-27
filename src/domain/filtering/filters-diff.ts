@@ -10,6 +10,7 @@ export class FiltersDiff implements IDiff {
       Diff.new(f?.namespace),
       Diff.new(f?.verdicts).setComparator(FiltersDiff.verdictsEqual),
       Diff.new(f?.httpStatus),
+      Diff.new(f?.since),
       Diff.new(f?.filters).setComparator(FiltersDiff.filterEntriesEqual),
       Diff.new(f?.skipHost),
       Diff.new(f?.skipKubeDns),
@@ -68,6 +69,7 @@ export class FiltersDiff implements IDiff {
     public namespace: Diff<string>,
     public verdicts: Diff<Set<Verdict>>,
     public httpStatus: Diff<string>,
+    public since: Diff<string>,
     public filters: Diff<FilterEntry[]>,
     public skipHost: Diff<boolean>,
     public skipKubeDns: Diff<boolean>,
@@ -84,6 +86,7 @@ export class FiltersDiff implements IDiff {
     this.namespace.step(rhs?.namespace);
     this.verdicts.step(rhs?.verdicts);
     this.httpStatus.step(rhs?.httpStatus);
+    this.since.step(rhs?.since);
     this.filters.step(rhs?.filters);
     this.skipHost.step(rhs?.skipHost);
     this.skipKubeDns.step(rhs?.skipKubeDns);
@@ -97,6 +100,7 @@ export class FiltersDiff implements IDiff {
     this.namespace.invert();
     this.verdicts.invert();
     this.httpStatus.invert();
+    this.since.invert();
     this.filters.invert();
     this.skipHost.invert();
     this.skipKubeDns.invert();
@@ -110,6 +114,7 @@ export class FiltersDiff implements IDiff {
     this.namespace.setUnchanged();
     this.verdicts.setUnchanged();
     this.httpStatus.setUnchanged();
+    this.since.setUnchanged();
     this.filters.setUnchanged();
     this.skipHost.setUnchanged();
     this.skipKubeDns.setUnchanged();
@@ -124,6 +129,7 @@ export class FiltersDiff implements IDiff {
       this.namespace.changed ||
       this.verdicts.changed ||
       this.httpStatus.changed ||
+      this.since.changed ||
       this.filters.changed ||
       this.skipHost.changed ||
       this.skipKubeDns.changed ||

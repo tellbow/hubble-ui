@@ -17,7 +17,7 @@ const testNullAndUndefinedAreNotEqualToSmth = () => {
 
   const filters: Array<undefined | FilterEntry[]> = [
     undefined,
-    [FilterEntry.parse('from:ip=158.183.221.43')!],
+    [FilterEntry.parse('from-ip:158.183.221.43')!],
   ];
 
   const skipHosts: Array<undefined | boolean> = [undefined, false, true];
@@ -84,12 +84,12 @@ const testCommonFiltersEquality = () => {
 
   const filters: Array<undefined | FilterEntry[]> = [
     [],
-    [FilterEntry.parse('both:dns=google.com')!, FilterEntry.parse('from:ip=255.255.255.255')!],
+    [FilterEntry.parse('both:dns=google.com')!, FilterEntry.parse('from-ip:255.255.255.255')!],
     [
-      FilterEntry.parse('to:label=k8s-app=core-api')!,
-      FilterEntry.parse('from:label=k8s-app=crawler')!,
+      FilterEntry.parse('to-label:k8s-app=core-api')!,
+      FilterEntry.parse('from-label:k8s-app=crawler')!,
     ],
-    [FilterEntry.parse('from:ip=158.183.221.43')!],
+    [FilterEntry.parse('from-ip:158.183.221.43')!],
   ];
 
   const skipHosts: Array<undefined | boolean> = [false, true];

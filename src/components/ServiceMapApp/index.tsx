@@ -6,6 +6,8 @@ import { TopBar } from '~/components/TopBar';
 import { DetailsPanel, ResizeProps as DetailsResizeProps } from '~/components/DetailsPanel';
 
 import { Map } from '~/components/Map';
+import { FlowsSankey } from '~/components/FlowsSankey';
+import { SegmentedControl } from '@blueprintjs/core';
 import {
   getProps as getLoadingOverlayProps,
   LoadingOverlay,
@@ -19,6 +21,7 @@ import { Verdict, TCPFlagName, PodSelector } from '~/domain/hubble';
 import { ServiceCard } from '~/domain/service-map';
 import { KV, Labels } from '~/domain/labels';
 import { FilterEntry, FilterDirection } from '~/domain/filtering';
+import { valueSuggestions } from '~/domain/filtering/fields';
 
 import { useApplication } from '~/application';
 
@@ -26,7 +29,28 @@ import { sizes } from '~/ui/vars';
 import { useFlowsTableColumns } from './hooks/useColumns';
 import css from './styles.scss';
 
+type View = 'map' | 'sankey';
+const viewKey = 'hubble-ui-view';
+
+const savedView = (): View => {
+  try {
+    return localStorage.getItem(viewKey) === 'sankey' ? 'sankey' : 'map';
+  } catch {
+    return 'map';
+  }
+};
+
 export const ServiceMapApp = observer(function ServiceMapApp() {
+  const [view, setView] = useState<View>(savedView);
+  const onViewChange = (v: string) => {
+    setView(v as View);
+    try {
+      localStorage.setItem(viewKey, v);
+    } catch {
+      // the view is only a convenience
+    }
+  };
+
   const { store, ui, dataLayer } = useApplication();
 
   const onFlowsDiffCount = useRef<((diff: number) => void) | null>(null);
@@ -82,41 +106,43 @@ export const ServiceMapApp = observer(function ServiceMapApp() {
     ui.controls.toggleVerdict(v);
   }, []);
 
-  const onSidebarTCPFlagClick = useCallback((flag?: TCPFlagName, dir?: FilterDirection) => {
-    if (!flag || !dir) return ui.controls.setFlowFilters([]);
+  // A click in the flow details adds its filter, or removes it when it is on.
+  const toggleFilter = (entry: FilterEntry) => {
+    const on = store.controls.flowFilters.some(f => f.toString() === entry.toString());
+    const [next] = FilterEntry.combine(
+      store.controls.flowFilters,
+      on ? [] : [entry],
+      on ? [entry] : [],
+    );
+    ui.controls.setFlowFilters(next);
+  };
 
-    ui.controls.setFlowFilters([FilterEntry.newTCPFlag(flag).setDirection(dir)]);
+  const onSidebarTCPFlagClick = useCallback((flag?: TCPFlagName, dir?: FilterDirection) => {
+    if (flag && dir) toggleFilter(FilterEntry.newTCPFlag(flag).setDirection(dir));
   }, []);
 
   const onSidebarLabelClick = useCallback((label?: KV, dir?: FilterDirection) => {
-    if (!label || !dir) return ui.controls.setFlowFilters([]);
-    const labelStr = Labels.concatKV(label);
-
-    ui.controls.setFlowFilters([FilterEntry.newLabel(labelStr).setDirection(dir)]);
+    if (label && dir) toggleFilter(FilterEntry.newLabel(Labels.concatKV(label)).setDirection(dir));
   }, []);
 
   const onSidebarPodClick = useCallback((podSelector?: PodSelector, dir?: FilterDirection) => {
-    if (!podSelector || !dir) return ui.controls.setFlowFilters([]);
-
-    ui.controls.setFlowFilters([FilterEntry.newPodSelector(podSelector).setDirection(dir)]);
+    if (podSelector && dir) toggleFilter(FilterEntry.newPodSelector(podSelector).setDirection(dir));
   }, []);
 
   const onSidebarIdentityClick = useCallback((identity?: string, dir?: FilterDirection) => {
-    if (identity == null || !dir) return ui.controls.setFlowFilters([]);
-
-    ui.controls.setFlowFilters([FilterEntry.newIdentity(identity).setDirection(dir)]);
+    if (identity != null && dir) toggleFilter(FilterEntry.newIdentity(identity).setDirection(dir));
   }, []);
 
   const onSidebarIpClick = useCallback((ip?: string, dir?: FilterDirection) => {
-    if (ip == null || !dir) return ui.controls.setFlowFilters([]);
-
-    ui.controls.setFlowFilters([FilterEntry.newIP(ip).setDirection(dir)]);
+    if (ip != null && dir) toggleFilter(FilterEntry.newIP(ip).setDirection(dir));
   }, []);
 
   const onSidebarDnsClick = useCallback((dns?: string) => {
-    if (dns == null) return ui.controls.setFlowFilters([]);
+    if (dns != null) toggleFilter(FilterEntry.newDNS(dns).setDirection(FilterDirection.Either));
+  }, []);
 
-    ui.controls.setFlowFilters([FilterEntry.newDNS(dns).setDirection(FilterDirection.Either)]);
+  const onSidebarFilterClick = useCallback((text: string) => {
+    FilterEntry.parseMany(text).forEach(toggleFilter);
   }, []);
 
   const cardRenderer = mobx.action((props: CardProps<ServiceCard>) => {
@@ -143,6 +169,7 @@ export const ServiceMapApp = observer(function ServiceMapApp() {
     flowsWaitTimeout,
     dataLayer.transferState.dataMode,
     store.namespaces.current?.namespace,
+    store.filters.isNarrowed,
   );
 
   const RenderedTopBar = (
@@ -150,14 +177,23 @@ export const ServiceMapApp = observer(function ServiceMapApp() {
       transferState={dataLayer.transferState}
       status={dataLayer.transferState.deploymentStatus || undefined}
       namespaces={store.availableNamespaces}
+      namespaceActivity={store.namespaces.activity}
       currentNamespace={store.currentNamespace}
       onNamespaceChange={ns => ui.controls.namespaceChanged(ns?.namespace)}
       selectedVerdict={store.controls.activeVerdict}
       onVerdictChange={v => ui.controls.toggleVerdict(v)}
       selectedHttpStatus={store.controls.httpStatus}
       onHttpStatusChange={store.controls.setHttpStatus}
+      since={store.controls.since}
+      onSinceChange={since => ui.controls.setSince(since)}
       flowFilters={store.controls.flowFilters}
       onChangeFlowFilters={ff => ui.controls.setFlowFilters(ff)}
+      flowFilterSuggestions={() =>
+        valueSuggestions(
+          store.currentFrame.interactions.flows,
+          store.currentNamespace?.namespace || null,
+        )
+      }
       showHost={ui.controls.isHostShown}
       onShowHostToggle={() => ui.controls.toggleShowHost()}
       showKubeDns={store.controls.showKubeDns}
@@ -175,6 +211,7 @@ export const ServiceMapApp = observer(function ServiceMapApp() {
         {RenderedTopBar}
         <WelcomeScreen
           namespaces={store.availableNamespaces}
+          activity={store.namespaces.activity}
           onNamespaceChange={ns => ui.controls.namespaceChanged(ns?.namespace)}
         />
       </div>
@@ -185,11 +222,37 @@ export const ServiceMapApp = observer(function ServiceMapApp() {
     <div className={css.app}>
       {RenderedTopBar}
 
-      <div className={css.map}>
-        {store.currentFrame.services.cardsList.length > 0 ? (
+      <div
+        className={css.map}
+        onClick={e => {
+          const target = (e.target as Element).closest('[data-drops-to]');
+          const cardId = target?.getAttribute('data-drops-to');
+          if (cardId) ui.serviceMap.showDropsTo(cardId);
+        }}
+      >
+        <SegmentedControl
+          small
+          className={css.viewSwitch}
+          value={view}
+          onValueChange={onViewChange}
+          options={[
+            { label: 'Map', value: 'map', icon: 'graph' },
+            { label: 'Sankey', value: 'sankey', icon: 'flow-branch' },
+          ]}
+        />
+        {view === 'sankey' ? (
+          <FlowsSankey
+            flows={store.currentFrame.interactions.flows}
+            namespace={store.currentNamespace?.namespace || null}
+            onFilter={text => {
+              const added = FilterEntry.parseMany(text);
+              const [next, changed] = FilterEntry.combine(store.controls.flowFilters, added);
+              if (changed) ui.controls.setFlowFilters(next);
+            }}
+          />
+        ) : store.currentFrame.services.cardsList.length > 0 ? (
           <Map
-            namespace={store.namespaces.current?.namespace}
-            namespaceBBox={ui.serviceMap.placement.namespaceBBox}
+            namespaceBBoxes={ui.serviceMap.placement.namespaceBBoxes}
             placement={ui.serviceMap.placement}
             arrows={ui.serviceMap.arrows}
             arrowsRenderer={ServiceMapArrowsRenderer}
@@ -227,6 +290,7 @@ export const ServiceMapApp = observer(function ServiceMapApp() {
         onSidebarIdentityClick={onSidebarIdentityClick}
         onSidebarIpClick={onSidebarIpClick}
         onSidebarDnsClick={onSidebarDnsClick}
+        onSidebarFilterClick={onSidebarFilterClick}
         onPanelResize={onPanelResize}
         onFlowsDiffCount={onFlowsDiffCount}
         onFlowsTableColumnToggle={flowsTableColumns.toggle}

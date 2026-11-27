@@ -36,7 +36,7 @@ $dot-size: 10px;
       @include exact-size($dot-size, $dot-size);
 
       border-radius: 50%;
-      background: #c8cdd3;
+      background: var(--hubble-ui-svcmap-card-dot-bg);
 
       margin: 0 10px;
     }
@@ -45,11 +45,11 @@ $dot-size: 10px;
       font-size: 24px;
       font-weight: bold;
 
-      color: #7129ba;
+      color: var(--hubble-ui-svcmap-card-port-active);
     }
 
     .protocol {
-      color: black;
+      color: var(--hubble-ui-svcmap-card-protocol);
     }
   }
 }

@@ -1,0 +1,984 @@
+{
+  "flows": {
+    "httpGet": {
+      "verdict": "FORWARDED",
+      "IP": {
+        "source": "10.244.1.5",
+        "destination": "10.244.2.9",
+        "encrypted": true
+      },
+      "l4": {
+        "TCP": {
+          "source_port": 41000,
+          "destination_port": 8080,
+          "flags": {
+            "SYN": true
+          }
+        }
+      },
+      "source": {
+        "identity": 1001,
+        "namespace": "shop",
+        "labels": [
+          "k8s:app=frontend"
+        ],
+        "pod_name": "frontend-7d9f",
+        "workloads": [
+          {
+            "name": "frontend",
+            "kind": "Deployment"
+          }
+        ]
+      },
+      "destination": {
+        "identity": 1002,
+        "namespace": "shop",
+        "labels": [
+          "k8s:app=cart"
+        ],
+        "pod_name": "cart-5c4b",
+        "workloads": [
+          {
+            "name": "cart",
+            "kind": "Deployment"
+          }
+        ]
+      },
+      "node_name": "kind/worker-1",
+      "l7": {
+        "http": {
+          "method": "GET",
+          "url": "http://cart:8080/api/items?x=1"
+        }
+      },
+      "event_type": {
+        "type": 4,
+        "sub_type": 1
+      },
+      "traffic_direction": "EGRESS"
+    },
+    "toWorld": {
+      "verdict": "DROPPED",
+      "IP": {
+        "source": "10.244.3.4",
+        "destination": "104.16.132.229"
+      },
+      "l4": {
+        "TCP": {
+          "source_port": 52000,
+          "destination_port": 443
+        }
+      },
+      "source": {
+        "identity": 2001,
+        "namespace": "demo",
+        "labels": [
+          "k8s:app=client"
+        ],
+        "pod_name": "client-1"
+      },
+      "destination": {
+        "identity": 2,
+        "labels": [
+          "reserved:world"
+        ]
+      },
+      "node_name": "worker-2",
+      "destination_names": [
+        "www.cloudflare.com"
+      ],
+      "event_type": {
+        "type": 1,
+        "sub_type": 133
+      },
+      "traffic_direction": "EGRESS",
+      "drop_reason_desc": "POLICY_DENIED"
+    },
+    "dnsQuery": {
+      "verdict": "FORWARDED",
+      "IP": {
+        "source": "fd00::3",
+        "destination": "fd00::a"
+      },
+      "l4": {
+        "UDP": {
+          "source_port": 33000,
+          "destination_port": 53
+        }
+      },
+      "source": {
+        "identity": 2001,
+        "namespace": "demo",
+        "labels": [
+          "k8s:app=client"
+        ],
+        "pod_name": "client-1"
+      },
+      "destination": {
+        "identity": 3001,
+        "namespace": "kube-system",
+        "labels": [
+          "k8s:k8s-app=kube-dns"
+        ],
+        "pod_name": "coredns-abc",
+        "workloads": [
+          {
+            "name": "coredns",
+            "kind": "Deployment"
+          }
+        ]
+      },
+      "node_name": "kind/worker-1",
+      "l7": {
+        "dns": {
+          "query": "cart.shop.svc."
+        }
+      },
+      "event_type": {
+        "type": 4
+      },
+      "traffic_direction": "INGRESS"
+    },
+    "ping": {
+      "IP": {
+        "source": "10.244.2.9",
+        "destination": "10.244.3.4"
+      },
+      "l4": {
+        "ICMPv4": {
+          "type": 8
+        }
+      },
+      "source": {
+        "identity": 1002,
+        "namespace": "shop",
+        "labels": [
+          "k8s:app=cart"
+        ],
+        "pod_name": "cart-5c4b"
+      },
+      "destination": {
+        "identity": 2001,
+        "namespace": "demo",
+        "labels": [
+          "k8s:app=client"
+        ],
+        "pod_name": "client-1"
+      },
+      "node_name": "kind/control-plane"
+    }
+  },
+  "cases": [
+    {
+      "name": "* | pod:frontend",
+      "whitelist": [
+        {
+          "source_pod": [
+            "/frontend"
+          ]
+        },
+        {
+          "destination_pod": [
+            "/frontend"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": true,
+        "toWorld": false,
+        "dnsQuery": false,
+        "ping": false
+      }
+    },
+    {
+      "name": "shop | pod:frontend",
+      "whitelist": [
+        {
+          "source_pod": [
+            "shop/frontend"
+          ]
+        },
+        {
+          "source_pod": [
+            "shop/"
+          ],
+          "destination_pod": [
+            "shop/frontend"
+          ]
+        },
+        {
+          "source_pod": [
+            "shop/frontend"
+          ],
+          "destination_pod": [
+            "shop/"
+          ]
+        },
+        {
+          "destination_pod": [
+            "shop/frontend"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": true,
+        "toWorld": false,
+        "dnsQuery": false,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | to-pod:shop/cart",
+      "whitelist": [
+        {
+          "destination_pod": [
+            "shop/cart"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": true,
+        "toWorld": false,
+        "dnsQuery": false,
+        "ping": false
+      }
+    },
+    {
+      "name": "demo | from-pod:shop/",
+      "whitelist": [
+        {
+          "source_pod": [
+            "shop/"
+          ],
+          "destination_pod": [
+            "demo/"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": false,
+        "toWorld": false,
+        "dnsQuery": false,
+        "ping": true
+      }
+    },
+    {
+      "name": "* | from-label:app=client",
+      "whitelist": [
+        {
+          "source_label": [
+            "app=client"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": false,
+        "toWorld": true,
+        "dnsQuery": true,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | !label:app=cart",
+      "whitelist": [
+        {}
+      ],
+      "blacklist": [
+        {
+          "source_label": [
+            "app=cart"
+          ]
+        },
+        {
+          "destination_label": [
+            "app=cart"
+          ]
+        }
+      ],
+      "expected": {
+        "httpGet": false,
+        "toWorld": true,
+        "dnsQuery": true,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | to-port:443,53",
+      "whitelist": [
+        {
+          "destination_port": [
+            "443",
+            "53"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": false,
+        "toWorld": true,
+        "dnsQuery": true,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | port:41000",
+      "whitelist": [
+        {
+          "source_port": [
+            "41000"
+          ]
+        },
+        {
+          "destination_port": [
+            "41000"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": true,
+        "toWorld": false,
+        "dnsQuery": false,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | to-port:8080 protocol:tcp",
+      "whitelist": [
+        {
+          "protocol": [
+            "tcp"
+          ],
+          "destination_port": [
+            "8080"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": true,
+        "toWorld": false,
+        "dnsQuery": false,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | protocol:udp,icmp",
+      "whitelist": [
+        {
+          "protocol": [
+            "udp",
+            "icmp"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": false,
+        "toWorld": false,
+        "dnsQuery": true,
+        "ping": true
+      }
+    },
+    {
+      "name": "* | protocol:http",
+      "whitelist": [
+        {
+          "protocol": [
+            "http"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": true,
+        "toWorld": false,
+        "dnsQuery": false,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | protocol:dns",
+      "whitelist": [
+        {
+          "protocol": [
+            "dns"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": false,
+        "toWorld": false,
+        "dnsQuery": true,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | http-method:get",
+      "whitelist": [
+        {
+          "http_method": [
+            "get"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": true,
+        "toWorld": false,
+        "dnsQuery": false,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | http-path:^/api/",
+      "whitelist": [
+        {
+          "http_path": [
+            "^/api/"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": true,
+        "toWorld": false,
+        "dnsQuery": false,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | to-ip:104.16.0.0/13",
+      "whitelist": [
+        {
+          "destination_ip": [
+            "104.16.0.0/13"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": false,
+        "toWorld": true,
+        "dnsQuery": false,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | ip:fd00::/64",
+      "whitelist": [
+        {
+          "source_ip": [
+            "fd00::/64"
+          ]
+        },
+        {
+          "destination_ip": [
+            "fd00::/64"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": false,
+        "toWorld": false,
+        "dnsQuery": true,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | from-ip:10.244.1.5",
+      "whitelist": [
+        {
+          "source_ip": [
+            "10.244.1.5"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": true,
+        "toWorld": false,
+        "dnsQuery": false,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | to-fqdn:*.cloudflare.com",
+      "whitelist": [
+        {
+          "destination_fqdn": [
+            "*.cloudflare.com"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": false,
+        "toWorld": true,
+        "dnsQuery": false,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | fqdn:WWW.cloudflare.com.",
+      "whitelist": [
+        {
+          "source_fqdn": [
+            "WWW.cloudflare.com."
+          ]
+        },
+        {
+          "destination_fqdn": [
+            "WWW.cloudflare.com."
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": false,
+        "toWorld": true,
+        "dnsQuery": false,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | node-name:worker-*",
+      "whitelist": [
+        {
+          "node_name": [
+            "worker-*"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": true,
+        "toWorld": true,
+        "dnsQuery": true,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | node-name:kind/worker-1",
+      "whitelist": [
+        {
+          "node_name": [
+            "kind/worker-1"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": true,
+        "toWorld": false,
+        "dnsQuery": true,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | workload:Deployment:cart",
+      "whitelist": [
+        {
+          "source_workload": [
+            {
+              "name": "cart",
+              "kind": "Deployment"
+            }
+          ]
+        },
+        {
+          "destination_workload": [
+            {
+              "name": "cart",
+              "kind": "Deployment"
+            }
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": true,
+        "toWorld": false,
+        "dnsQuery": false,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | from-workload:frontend",
+      "whitelist": [
+        {
+          "source_workload": [
+            {
+              "name": "frontend"
+            }
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": true,
+        "toWorld": false,
+        "dnsQuery": false,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | identity:2",
+      "whitelist": [
+        {
+          "source_identity": [
+            2
+          ]
+        },
+        {
+          "destination_identity": [
+            2
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": false,
+        "toWorld": true,
+        "dnsQuery": false,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | tcp-flags:syn",
+      "whitelist": [
+        {
+          "tcp_flags": [
+            {
+              "SYN": true
+            }
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": true,
+        "toWorld": false,
+        "dnsQuery": false,
+        "ping": false
+      }
+    },
+    {
+      "name": "demo | from-pod:client to-port:443",
+      "whitelist": [
+        {
+          "source_pod": [
+            "demo/client"
+          ],
+          "destination_port": [
+            "443"
+          ]
+        },
+        {
+          "source_pod": [
+            "demo/client"
+          ],
+          "destination_pod": [
+            "demo/"
+          ],
+          "destination_port": [
+            "443"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": false,
+        "toWorld": true,
+        "dnsQuery": false,
+        "ping": false
+      }
+    },
+    {
+      "name": "demo | !to-port:53",
+      "whitelist": [
+        {
+          "source_pod": [
+            "demo/"
+          ]
+        },
+        {
+          "destination_pod": [
+            "demo/"
+          ]
+        }
+      ],
+      "blacklist": [
+        {
+          "destination_port": [
+            "53"
+          ]
+        }
+      ],
+      "expected": {
+        "httpGet": false,
+        "toWorld": true,
+        "dnsQuery": false,
+        "ping": true
+      }
+    },
+    {
+      "name": "shop | !pod:frontend",
+      "whitelist": [
+        {
+          "source_pod": [
+            "shop/"
+          ]
+        },
+        {
+          "destination_pod": [
+            "shop/"
+          ]
+        }
+      ],
+      "blacklist": [
+        {
+          "source_pod": [
+            "shop/frontend"
+          ]
+        },
+        {
+          "destination_pod": [
+            "shop/frontend"
+          ]
+        }
+      ],
+      "expected": {
+        "httpGet": false,
+        "toWorld": false,
+        "dnsQuery": false,
+        "ping": true
+      }
+    },
+    {
+      "name": "* | encrypted:yes",
+      "whitelist": [
+        {
+          "encrypted": [
+            true
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": true,
+        "toWorld": false,
+        "dnsQuery": false,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | !encrypted:no",
+      "whitelist": [
+        {}
+      ],
+      "blacklist": [
+        {
+          "encrypted": [
+            false
+          ]
+        }
+      ],
+      "expected": {
+        "httpGet": true,
+        "toWorld": false,
+        "dnsQuery": false,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | encrypted:no",
+      "whitelist": [
+        {
+          "encrypted": [
+            false
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": false,
+        "toWorld": true,
+        "dnsQuery": true,
+        "ping": true
+      }
+    },
+    {
+      "name": "* | traffic-direction:ingress",
+      "whitelist": [
+        {
+          "traffic_direction": [
+            "INGRESS"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": false,
+        "toWorld": false,
+        "dnsQuery": true,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | traffic-direction:egress,ingress",
+      "whitelist": [
+        {
+          "traffic_direction": [
+            "EGRESS",
+            "INGRESS"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": true,
+        "toWorld": true,
+        "dnsQuery": true,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | event-type:to-proxy",
+      "whitelist": [
+        {
+          "event_type": [
+            {
+              "type": 4,
+              "match_sub_type": true,
+              "sub_type": 1
+            }
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": true,
+        "toWorld": false,
+        "dnsQuery": false,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | event-type:to-endpoint,to-proxy",
+      "whitelist": [
+        {
+          "event_type": [
+            {
+              "type": 4,
+              "match_sub_type": true
+            },
+            {
+              "type": 4,
+              "match_sub_type": true,
+              "sub_type": 1
+            }
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": true,
+        "toWorld": false,
+        "dnsQuery": true,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | drop-reason:policy-denied",
+      "whitelist": [
+        {
+          "drop_reason_desc": [
+            "POLICY_DENIED"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": false,
+        "toWorld": true,
+        "dnsQuery": false,
+        "ping": false
+      }
+    },
+    {
+      "name": "* | !drop-reason:policy-denied",
+      "whitelist": [
+        {}
+      ],
+      "blacklist": [
+        {
+          "drop_reason_desc": [
+            "POLICY_DENIED"
+          ]
+        }
+      ],
+      "expected": {
+        "httpGet": true,
+        "toWorld": false,
+        "dnsQuery": true,
+        "ping": true
+      }
+    },
+    {
+      "name": "* | pod:client !to-fqdn:*.cloudflare.com",
+      "whitelist": [
+        {
+          "source_pod": [
+            "/client"
+          ]
+        },
+        {
+          "destination_pod": [
+            "/client"
+          ]
+        }
+      ],
+      "blacklist": [
+        {
+          "destination_fqdn": [
+            "*.cloudflare.com"
+          ]
+        }
+      ],
+      "expected": {
+        "httpGet": false,
+        "toWorld": false,
+        "dnsQuery": true,
+        "ping": true
+      }
+    },
+    {
+      "name": "shop | from-pod:cart to-pod:demo/client",
+      "whitelist": [
+        {
+          "source_pod": [
+            "shop/cart"
+          ],
+          "destination_pod": [
+            "demo/client"
+          ]
+        }
+      ],
+      "blacklist": [],
+      "expected": {
+        "httpGet": false,
+        "toWorld": false,
+        "dnsQuery": false,
+        "ping": true
+      }
+    }
+  ]
+}

@@ -36,6 +36,9 @@ export class ServiceMap extends EventEmitter<Handlers> {
   private streamFlags?: Partial<EventParams>;
   private stream: ServiceMapStream | null = null;
   private streamRetries: Retries = Retries.newExponential();
+  // The backend rejected the filters: asking again cannot help until they
+  // change, and changing them opens a new stream.
+  private filtersRejected = false;
 
   constructor(opts: Options) {
     super(true);
@@ -113,12 +116,16 @@ export class ServiceMap extends EventEmitter<Handlers> {
     console.debug('ensuring service map data stream');
     if (this.stream != null) return this.stream;
 
+    this.filtersRejected = false;
     this.stream = this.backendAPI
       .serviceMapStream(this.store.filters, this.streamFlags)
       .onServices(svcs => this.store.currentFrame.applyServiceChanges(svcs))
       .onServiceLinks(links => this.store.currentFrame.applyServiceLinkChanges(links))
       .onFlows(flows => this.handleFlows(this.store.currentFrame, flows))
-      .onErrors(errs => this.emit(Event.Errors, errs))
+      .onErrors(errs => {
+        if (errs.some(e => e.isInvalidArgument)) this.filtersRejected = true;
+        this.emit(Event.Errors, errs);
+      })
       .onReconnectAttemptFailed((att, err) => this.handleReconnectFail(att, err))
       .onReconnectAttempt((att, d) => this.handleReconnectDelay(att, d))
       .onReconnected(attempt => this.handleReconnected(attempt))
@@ -180,13 +187,19 @@ export class ServiceMap extends EventEmitter<Handlers> {
       return;
     }
 
-    // NOTE: When isStopped set to false, it means that stream was terminated
-    // by backend and we probably need to try to recreate it...
-    this.emit(Event.ConnectEvent, ConnectEvent.newDisconnected());
-
     // NOTE: Stream was terminated, so we don't need to call .stop() on it
     this.stream.terminate().offAllEvents();
     this.stream = null;
+
+    if (this.filtersRejected) {
+      this.transferState.dropReconnectState(StreamKind.Event);
+      this.streamRetries.reset();
+      return;
+    }
+
+    // NOTE: When isStopped set to false, it means that stream was terminated
+    // by backend and we probably need to try to recreate it...
+    this.emit(Event.ConnectEvent, ConnectEvent.newDisconnected());
 
     // NOTE: Recreate stream with exact last params used (including possible
     // policies enabled)
@@ -232,7 +245,7 @@ export class ServiceMap extends EventEmitter<Handlers> {
     // NOTE: Stream is supposed to be null if ServiceMap wasn't ever opened
     await this.dropDataFetch();
 
-    if (f.podFiltersChanged || f.namespace.changed) {
+    if (f.podFiltersChanged || f.namespace.changed || f.since.changed) {
       this.store.flush({ globalFrame: true });
     }
 

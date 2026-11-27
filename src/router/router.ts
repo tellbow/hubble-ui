@@ -6,7 +6,7 @@ import { Application } from '~/domain/common';
 import * as dhelpers from '~/domain/helpers';
 
 import { DataLayer } from '~/data-layer';
-import { FilterEntry } from '~/domain/filtering';
+import { FilterEntry, TimeRanges } from '~/domain/filtering';
 
 import {
   RouteAction,
@@ -111,6 +111,8 @@ export class Router extends EventEmitter<Handlers> {
     const ns = nsParam === ALL_NAMESPACES_PARAM ? '' : nsParam;
     const verdicts = dhelpers.verdict.parseManySet(this.searchParams.get(RouteParam.Verdicts), '-');
     const httpStatus = this.searchParams.get(RouteParam.HttpStatus);
+    const sinceParam = this.searchParams.get(RouteParam.Since);
+    const since = sinceParam != null && sinceParam in TimeRanges ? sinceParam : null;
     const flowFilters = FilterEntry.parseMany(this.searchParams.get(RouteParam.FlowsFilter));
 
     const app = this.getCurrentApplication();
@@ -119,6 +121,7 @@ export class Router extends EventEmitter<Handlers> {
       namespace: ns,
       verdicts,
       httpStatus,
+      since,
       flowFilters,
       app,
     };
@@ -201,8 +204,12 @@ export class Router extends EventEmitter<Handlers> {
       this.updateRouteParam(RouteParam.HttpStatus, diff.after);
     });
 
+    this.dataLayer.controls.onSinceChanged(diff => {
+      this.updateRouteParam(RouteParam.Since, diff.after);
+    });
+
     this.dataLayer.controls.onFlowFiltersChanged(diff => {
-      const str = diff.after?.map(f => f.toString()).join(',') || null;
+      const str = diff.after?.map(f => f.toString()).join(' ') || null;
       this.updateRouteParam(RouteParam.FlowsFilter, str);
     });
   }

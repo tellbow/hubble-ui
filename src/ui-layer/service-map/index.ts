@@ -7,7 +7,8 @@ import { EventEmitter } from '~/utils/emitter';
 
 import { ServiceCard } from '~/domain/service-map';
 import { Application } from '~/domain/common';
-import { FilterEntry } from '~/domain/filtering/filter-entry';
+import { FilterEntry, Direction } from '~/domain/filtering/filter-entry';
+import { Verdict } from '~/domain/hubble';
 
 import { RefsCollector } from '~/ui/service-map/collector';
 import { Options } from '~/ui-layer/common';
@@ -87,6 +88,23 @@ export class ServiceMap extends EventEmitter<Handlers> {
 
   public onCardSelect(card: ServiceCard) {
     this.dataLayer.serviceMap.toggleActiveCardFilterEntry(card.id);
+    this.router.commit();
+  }
+
+  // A click on a red arrow: the flows dropped on their way into that card.
+  public showDropsTo(cardId: string) {
+    const card = this.store.currentFrame.services.byId(cardId);
+    if (card == null) return;
+
+    // NOTE: Entries are OR'd: next to the identity, a world card's
+    // `reserved:world` label would also match drops to every other world peer.
+    const entries = card.filterEntries;
+    const identity = entries.filter(e => e.isIdentity);
+
+    this.dataLayer.controls.toggleVerdict(Verdict.Dropped);
+    this.dataLayer.controls.setFlowFilters(
+      (identity.length > 0 ? identity : entries).map(e => e.setDirection(Direction.To)),
+    );
     this.router.commit();
   }
 

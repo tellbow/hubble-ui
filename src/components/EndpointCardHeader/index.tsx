@@ -17,9 +17,10 @@ export interface Props {
 export const EndpointCardHeader = memo(function EndpointCardHeader(props: Props) {
   const { card, currentNamespace } = props;
   const showNamespace = !!card.namespace && card.namespace !== currentNamespace;
+  const subtitle = showNamespace ? card.namespace : card.worldDetails;
 
   const titleClassName = classnames(css.title, {
-    [css.single]: !showNamespace,
+    [css.single]: !subtitle,
   });
 
   return (
@@ -29,7 +30,7 @@ export const EndpointCardHeader = memo(function EndpointCardHeader(props: Props)
 
         <div className={css.headings}>
           <div className={titleClassName}>{card.caption}</div>
-          {showNamespace && <div className={css.subtitle}>{card.namespace}</div>}
+          {subtitle && <div className={css.subtitle}>{subtitle}</div>}
         </div>
       </div>
     </div>

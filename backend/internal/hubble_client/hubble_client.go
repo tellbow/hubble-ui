@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/cilium/cilium/api/v1/flow"
 	"github.com/cilium/cilium/api/v1/observer"
 
 	"github.com/cilium/hubble-ui/backend/pkg/grpc_client"
@@ -16,6 +17,7 @@ import (
 type HubbleClientInterface interface {
 	FlowStream() flow_stream.FlowStreamInterface
 	ServerStatus(context.Context) (*observer.ServerStatusResponse, error)
+	RecentFlows(ctx context.Context, n uint64) ([]*flow.Flow, error)
 	ServerStatusChecker(opts StatusCheckerOptions) (statuschecker.ServerStatusCheckerInterface, error)
 }
 

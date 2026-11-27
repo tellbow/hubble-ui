@@ -1,7 +1,7 @@
 import React, { memo, useCallback } from 'react';
 import classnames from 'classnames';
 
-import { FilterDirection } from '~/domain/filtering';
+import { FilterDirection, Filters } from '~/domain/filtering';
 import { TCPFlagName, Verdict, PodSelector } from '~/domain/hubble';
 import { KV } from '~/domain/misc';
 import * as verdictHelpers from '~/domain/helpers/verdict';
@@ -191,6 +191,28 @@ export const DnsBodyItem = memo<DnsItemProps>(function FlowsTableSidebarDnsBodyI
     </span>
   );
 });
+
+// A value that toggles the filter (code mode text) that keeps flows like it.
+export const FilterValue = (props: {
+  filter: string | null;
+  filters: Filters;
+  onClick?: (filter: string) => void;
+  children: React.ReactNode;
+}) => {
+  const { filter, onClick } = props;
+  if (filter == null || onClick == null) return <>{props.children}</>;
+
+  const selected = !!props.filters.filters?.some(f => f.toString() === filter);
+  return (
+    <span
+      className={classnames({ [css.clickable]: true, [css.selected]: selected })}
+      title={selected ? `Remove the filter ${filter}` : `Filter by ${filter}`}
+      {...clickable(() => onClick(filter))}
+    >
+      {props.children}
+    </span>
+  );
+};
 
 export interface IdentityItemProps {
   identity: number;
