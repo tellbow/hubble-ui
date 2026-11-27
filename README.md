@@ -10,8 +10,9 @@ fixes from upstream as backports (see [Upstream](#-upstream)).
 ## ✨ What this fork adds
 
 **Finding flows**
-- A filter language with the flags of `hubble observe` (`from-pod:frontend
-  to-port:443 !label:app=db`), checked as you type, kept in the URL
+
+- A filter language with the flags of `hubble observe`, checked as you type
+  and kept in the URL: `from-pod:frontend to-port:443 !label:app=db`
   ([Filtering flows](#filtering-flows)).
 - A **Builder** mode that edits the same filters as rows, suggesting the values
   seen on screen.
@@ -20,6 +21,7 @@ fixes from upstream as backports (see [Upstream](#-upstream)).
 - A **Sankey** view of who talks to whom on which port, next to the service map.
 
 **Seeing more**
+
 - A welcome screen that lists namespaces by their traffic; "All namespaces"
   with a box per namespace.
 - The policies that allowed or denied a flow, its encryption status, and why a
@@ -28,6 +30,7 @@ fixes from upstream as backports (see [Upstream](#-upstream)).
 - A time range, pause, CSV and Hubble JSON export, dark mode, phone-width layouts.
 
 **Holding up**
+
 - Streams that no longer get stuck, lose messages or leak, found by fault
   injection; the UI reopens them after a backend restart.
 - Errors reach the screen: a filter Cilium rejects is reported once instead of
@@ -36,8 +39,8 @@ fixes from upstream as backports (see [Upstream](#-upstream)).
 - Playwright tests in a real browser, and the filters golden-tested against
   Cilium's own filter code.
 
-| Filter builder | Sankey view | Flow details |
-| :-: | :-: | :-: |
+|               Filter builder                |           Sankey view            |                         Flow details                          |
+| :-----------------------------------------: | :------------------------------: | :-----------------------------------------------------------: |
 | ![Filter builder](promo/filter-builder.png) | ![Sankey view](promo/sankey.png) | ![Flow details with clickable values](promo/flow-details.png) |
 
 ## 🚀 Installation
